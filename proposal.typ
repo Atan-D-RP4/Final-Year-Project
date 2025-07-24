@@ -54,13 +54,9 @@
 // Header info
 #grid(
   columns: (1fr, 1fr),
-  [#text(weight: "bold")[Department of:] #h(2em) #line(length: 3in, stroke: 0.5pt)],
+  [#text(weight: "bold")[Academic Year:] #h(2em) #line(length: 2in, stroke: 0.5pt)],
   [#text(weight: "bold")[Date:] #h(2em) #line(length: 2in, stroke: 0.5pt)],
 )
-
-#v(0.5em)
-
-#text(weight: "bold")[Academic Year:] #h(2em) #line(length: 2in, stroke: 0.5pt)
 
 #v(1em)
 
@@ -100,7 +96,7 @@
     #v(0.05em)
     M. Sai Teja (A22126510163)
     #v(0.05em)
-    Venkata vishaal Tirupalli (A22126510193)],
+    Venkata Vishaal Tirupalli (A22126510193)],
   [#text(weight: "bold")[Team Members Email:] #v(1.5em)],
   [#text(weight: "bold")[Team Members Phone:] #v(1.5em)],
 
