@@ -20,7 +20,7 @@
   Dr. D. Naga Teja \                                                                                              Associate professor
 
   #box(width: 2.4in, height: 2.4in)[
-   // #image("anits_logo.png", width: 2.4in, height: 2.4in)
+    #image("anits_logo.png", width: 2.4in, height: 2.4in)
   ]
 
   *DEPARTMENT OF COMPUTER SCIENCE AND ENGINEERING* \
