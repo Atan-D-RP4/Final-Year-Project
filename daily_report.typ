@@ -50,7 +50,7 @@
 #v(0.2em)
 
 #text(weight: "bold")[Project Guide:]
-
+Dr. D. Naga Teja
 #v(0.2em)
 
 #text(weight: "bold")[List of Members:]
@@ -63,7 +63,7 @@ Wuna Akhilesh (A22126510194)
 #v(0.05em)
 M. Sai Teja (A22126510163)
 #v(0.05em)
-Venkata vishaal Tirupalli (A22126510193)
+Venkata Vishaal Tirupalli (A22126510193)
 
 #v(0.2em)
 
@@ -71,7 +71,7 @@ Venkata vishaal Tirupalli (A22126510193)
 
 #v(0.2em)
 
-#text(size: 12pt, weight: "bold")[Diary of B.tech Project work]
+#text(size: 12pt, weight: "bold")[Diary of B.Tech Project work]
 
 #v(0.1em)
 
