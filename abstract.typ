@@ -9,15 +9,15 @@
     columns: (auto, auto),
     align: left,
     [Registration number], [Name of the Student],
-    [A22126510164], [M. Veerendra Kumar],
-    [A22126510139], [CH. Kavya Naidu],
-    [A22126510174], [P. Prasanth],
-    [A22126510178], [S. Sai Praveen],
-    [A22126510145], [Gadde Vivek],
+    [A22126510134], [M. Bheesetti Harsith Veera Charan],
+    [A22126510144], [D. Chaitanya],
+    [A22126510194], [Wuna Akhilesh],
+    [A22126510163], [M. Sai Teja],
+    [A22126510193], [Venkata Vishaal Tirupalli],
   )
 
   *UNDER THE GUIDANCE OF* \
-  Y. Sujatha \                                                                                              Associate professor
+  Dr. D. Naga Teja \                                                                                              Associate professor
 
   #box(width: 2.4in, height: 2.4in)[
    // #image("anits_logo.png", width: 2.4in, height: 2.4in)
