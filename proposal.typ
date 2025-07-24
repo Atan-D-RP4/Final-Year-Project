@@ -1,138 +1,220 @@
-#let document-title = "Chronos-Bolt for Sequential Behavioral Data Forecasting"
-#let submission-details = [
-  A Project report submitted in partial fulfillment of the requirements for the award of degree in        
-  *BACHELOR OF TECHNOLOGY* \
-  *(COMPUTER SCIENCE AND ENGINEERING)*
+#set page(margin: (x: 0.8in, y: 0.8in))
+#set text(font: "Times New Roman", size: 11pt)
+#set par(justify: false)
 
-  *SUBMITTED BY* \
-  #table(
-    columns: (auto, auto),
-    align: left,
-    [Registration number], [Name of the Student],
-    [A22126510134], [M. Veerendra Kumar],
-    [A22126510144], [D. Chaitanya],
-    [A22126510194], [Wuna Akhilesh],
-    [A22126510163], [M. Sai Teja],
-    [A22126510193], [Venkata Vishaal Tirupalli],
-  )
+// Header table with institution details
+#table(
+  columns: (auto, 1fr),
+  stroke: 1pt,
+  align: (center, center),
 
-  *UNDER THE GUIDANCE OF* \
-  Dr. D. Naga Teja \                                                                                              Associate professor
+  // Logo cell
+  table.cell(rowspan: 1, [
+    #box(width: 1.4in, height: 1.5in)[
+      #image("anits_logo.png", width: 1.4in, height: 1.5in)
+    ]
+  ]),
 
-  #box(width: 2.4in, height: 2.4in)[
-   // #image("anits_logo.png", width: 2.4in, height: 2.4in)
-  ]
+  // Institution details cell
+  [
+    #text(size: 14pt, weight: "bold")[
+      ANIL NEERUKONDA INSTITUTE OF TECHNOLOGY AND SCIENCES
+    ]
 
-  *DEPARTMENT OF COMPUTER SCIENCE AND ENGINEERING* \
-  *ANIL NEERUKONDA INSTITUTE OF TECHNOLOGY AND SCIENCES (A+)* \
-  SANGIVALASA, VISAKHAPATNAM – 531162 \
-  July - 2025
-]
+    #v(0.3em)
+    #text(size: 11pt, style: "italic")[
+      (Affiliated to Andhra University)
+    ]
 
-#set document(title: document-title)
-#set page(
-  margin: (x: 1in, y: 1in),
-  numbering: "i",
+    #v(0.5em)
+    #text(size: 11pt)[
+      Sangivalasa-531 162, BheemunipatnamMandal,
+
+      Visakhapatnam Dt.
+    ]
+  ],
 )
-#set text(font: "Times New Roman", size: 12pt)
-#set heading(numbering: "1.")
-#set par(justify: true, leading: 1em)
 
-#align(center)[
-  #text(size: 16pt, weight: "bold")[#document-title]
-  #v(1em)
-  #submission-details
+#v(1em)
+
+// Department heading
+#text(size: 12pt, weight: "bold")[
+  DEPARTMENT OF COMPUTER SCIENCE AND ENGINEERING
 ]
 
-#pagebreak()
+#v(1em)
 
-#set page(numbering: "1")
+// Title
+#text(size: 12pt, weight: "bold")[
+  B.Tech Project Proposal / Idea Submission Form (Review-1)
+]
+
+#v(1em)
+
+// Header info
+#grid(
+  columns: (1fr, 1fr),
+  [ #text(weight: "bold")[Academic Year:] #h(2em) #line(length: 2in, stroke: 0.5pt) ],
+  [#text(weight: "bold")[Date:] #h(2em) #line(length: 2in, stroke: 0.5pt)],
+)
+
+#v(0.5em)
 
 
-= About Domain
+#v(1em)
 
-This project operates within the domain of *Time-Series Forecasting* and *Sequential Data Analysis*, specifically focusing on the application of foundation models to behavioral and conversational data streams. The domain encompasses probabilistic forecasting methods, tokenization-based approaches for non-traditional time series, and zero-shot learning capabilities in pretrained models. By leveraging Chronos-Bolt, a state-of-the-art foundation model originally designed for numerical time-series forecasting, we explore its adaptability to sequential behavioral patterns such as user clickstream behavior and dialogue sentiment streams.
+// Main form table
+#table(
+  columns: (0.75fr, 1fr, 1fr),
+  stroke: 1pt,
+  align: left + top,
 
-= How it is Feasible to Present Society Needs
+  // Title row
+  table.cell(colspan: 3, [#text(weight: "bold")[Title of the Project:] #v(1em)]),
 
-Modern digital interactions generate vast amounts of sequential behavioral data that require accurate forecasting for improved user experience, content personalization, and system optimization. Traditional time-series forecasting methods often struggle with the discrete, heterogeneous nature of behavioral data. This project addresses the growing societal need for:
+  // Project type row
+  table.cell(colspan: 3, [
+    #text(weight: "bold")[
+      What type of project it is? (#text(style: "italic")[Interdisciplinary /
+        Society Application / Non society application / other]. Please specify)
+    ]
+    #v(2em)
+  ]),
 
-- *Personalized Digital Experiences*: Predicting user behavior patterns to enhance recommendation systems and content delivery
-- *Real-time Decision Making*: Enabling systems to anticipate user actions and sentiment shifts for proactive responses  
-- *Resource Optimization*: Forecasting user engagement patterns to optimize computational resources and service delivery
-- *Enhanced Human-Computer Interaction*: Understanding sequential patterns in dialogue and interaction for better conversational AI systems
+  // Team lead info
+  [#text(weight: "bold")[Team Lead Name:] #v(0.05em)
+    B. Harsith Veera Charan
+  ],
+  [#text(weight: "bold")[Team Lead Email:] #v(7em)],
+  [#text(weight: "bold")[Team Lead Phone:] #v(7em)],
 
-= What the Problem Identified
+  // Team members info
+  [#text(weight: "bold")[Team Members Name:]  #v(7em)],
+  [#text(weight: "bold")[Team Members Email:] #v(7em)],
+  [#text(weight: "bold")[Team Members Phone:] #v(7em)],
 
-Current approaches to behavioral sequence forecasting face several critical limitations:
+  // Project proposal type
+  table.cell(colspan: 2, [
+    #text(weight: "bold")[Project proposal as part of:] Academic Requirement /
+    Study Project #v(1.5em)
+  ]),
+  table.cell(colspan: 1, [#text(weight: "bold")[Innovation Type:] #v(1.5em)]),
 
-1. *Domain-Specific Model Requirements*: Most forecasting models require extensive domain-specific training and cannot generalize across different types of behavioral data
-2. *Limited Transfer Learning*: Existing time-series models struggle to leverage knowledge from traditional numerical forecasting when applied to tokenized behavioral sequences
-3. *Lack of Zero-Shot Capabilities*: Current methods require substantial training data for each new behavioral domain, limiting their applicability in data-scarce scenarios
-4. *Inefficient Tokenization Approaches*: Traditional methods for converting behavioral data into forecast-ready formats often lose critical sequential information
+  // Question 1
+  table.cell(colspan: 3, [#text(weight: "bold")[1. Theme :] #v(3em)]),
 
-= What the Solution Suggested
+  // Question 2
+  table.cell(
+    colspan: 3,
+    [
+      #text(weight: "bold")[
+        2. Define the problem and its relevance to today's market / society / industry need (Describe how your idea could reach a significant number of end-users?):
+      ]
+      #v(4em)
+    ],
+  ),
 
-This project proposes a novel approach that adapts Chronos-Bolt's pretrained foundation model capabilities to sequential behavioral data through:
+  // Question 3
+  table.cell(colspan: 3, [
+    #text(weight: "bold")[
+      3. Provide relevant background information and cite existing evidence that links to or supports your idea.
+    ]
+    #v(4em)
+  ]),
 
-1. *Innovative Tokenization Strategy*: Converting real-valued sliding-window features (event counts, sentiment scores) into token sequences that align with Chronos's quantization-based approach, treating behavioral signals as a pseudo-time-series "language"
+  // Question 4
+  table.cell(colspan: 3, [
+    #text(weight: "bold")[
+      4. Describe the Solution / Proposed :
+    ]
+    #v(4em)
+  ]),
 
-2. *Zero-Shot Forecasting Evaluation*: Applying the pretrained Chronos-Bolt model without fine-tuning to assess its transfer learning capabilities across behavioral domains, measuring performance through classification accuracy (F1, AUC) and quantile forecast accuracy (MASE, CRPS)
+  // Question 5
+  table.cell(colspan: 3, [
+    #text(weight: "bold")[
+      5. Describe your idea, including the methods and technologies involved.
+    ]
+    #v(4em)
+  ]),
 
-3. *Optional Fine-Tuning Framework*: Implementing domain-specific fine-tuning using AutoGluon-TimeSeries infrastructure to quantify performance improvements over zero-shot baselines
+  // Question 6
+  table.cell(
+    colspan: 3,
+    [
+      #text(weight: "bold")[
+        6. Explain the uniqueness and distinctive features of the (product / process / service) solution (Describe how your solution is innovative) :
+      ]
+      #v(4em)
+    ],
+  ),
 
-4. *Comprehensive Performance Assessment*: Establishing evaluation metrics that account for both discrete classification tasks (next event type prediction) and continuous forecasting tasks (sentiment trend prediction)
+  // Question 7
+  table.cell(
+    colspan: 3,
+    [
+      #text(weight: "bold")[
+        7. How your proposed / developed (product / process / service) solution is different from similar kind of product by the competitors if any:
+      ]
+      #v(4em)
+    ],
+  ),
 
-= How the Proposed Solution is Apt for Present Needs of Users
+  // Question 8
+  table.cell(colspan: 3, [
+    #text(weight: "bold")[
+      8. Is it Patentable project/Solution?: Yes/No
+    ]
+    #v(2em)
+  ]),
 
-The solution directly addresses current user and system requirements by:
+  // Question 9
+  table.cell(colspan: 3, [
+    #text(weight: "bold")[
+      9. Is the Solution commercializable either through Technology Transfer or Enterprise Development/Startup?: Yes/No
+    ]
+    #v(2em)
+  ]),
+)
 
-- *Reducing Development Time*: Zero-shot capabilities eliminate the need for extensive model training for new behavioral domains
-- *Improving Scalability*: A single pretrained model can potentially handle multiple types of sequential behavioral data
-- *Enhancing Accuracy*: Leveraging foundation model capabilities trained on diverse time-series data for better generalization
-- *Enabling Rapid Deployment*: Quick adaptation to new behavioral forecasting tasks without significant computational overhead
+#v(1em)
 
-= Technologies Used
+// Note
+#text(style: "italic", weight: "bold")[
+  **Attach additional sheets to this form to answer above questions , if necessary
+]
 
-- *Chronos-Bolt*: Pretrained foundation model for probabilistic time-series forecasting
-- *AutoGluon-TimeSeries*: Framework for model deployment, evaluation, and optional fine-tuning
-- *Python Ecosystem*: Data preprocessing, tokenization, and evaluation pipeline
-- *Statistical Evaluation Metrics*: MASE, CRPS for quantile forecasting; F1, AUC for classification tasks
+#v(2em)
 
-= Feasibility Study
+// Department section
+#text(style: "italic", weight: "bold")[
+  #underline[To be filled by Department Project Committee (DPC) only]
+]
 
-== Operational Feasibility
-The project leverages existing pretrained models and established frameworks (AutoGluon), reducing operational complexity. The focus on a single domain ensures manageable scope within a 5-month undergraduate timeline.
+#v(1em)
 
-== Technical Feasibility  
-Chronos-Bolt's tokenization-based architecture is well-suited for adaptation to behavioral sequences. The use of established evaluation metrics and frameworks ensures technical viability.
+#text(weight: "bold")[
+  #underline[Approval Status:] #text(style: "italic")[Approved / Sent back for Modification]
+]
 
-== Economical Feasibility
-Utilizing pretrained models minimizes computational costs. The optional nature of fine-tuning allows for budget-conscious execution while maintaining research value.
+#v(1em)
 
-= Architecture Model
+#text(weight: "bold")[
+  #underline[Remarks / suggestions:]
+]
 
-The proposed system follows a pipeline architecture:
-1. *Data Preprocessing Layer*: Sliding-window feature extraction and normalization
-2. *Tokenization Layer*: Conversion of behavioral signals to token sequences
-3. *Forecasting Layer*: Chronos-Bolt model application (zero-shot and optionally fine-tuned)
-4. *Evaluation Layer*: Performance assessment using domain-appropriate metrics
+#v(2em)
+#line(length: 100%, stroke: 0.5pt)
+#v(1em)
+#line(length: 100%, stroke: 0.5pt)
 
-= Expected Contributions
+#v(2em)
 
-- Demonstrate the transferability of Chronos-Bolt's pretrained capabilities to non-traditional sequential domains
-- Establish feasibility of token-based forecasting for behavioral data streams  
-- Provide empirical comparison between zero-shot and fine-tuned performance in real sequential domains
-- Create a reusable framework for applying foundation models to diverse behavioral forecasting tasks
-
-= References
-
-#set enum(numbering: "[1]")
-+ Amazon Web Services, Inc., "Fast and accurate zero-shot forecasting with Chronos-Bolt and AutoGluon"
-+ Amazon Science, "Chronos: Adapting language model architectures for time series forecasting"
-+ "Chronos: Learning the Language of Time Series," arXiv:2403.07815
-+ Hugging Face, "amazon/chronos-bolt-small" model repository
-
-= Conclusion
-
-This project represents a novel exploration of foundation model capabilities in behavioral forecasting, potentially opening new avenues for efficient, scalable prediction systems in digital interaction domains. The combination of zero-shot evaluation and optional fine-tuning provides a comprehensive assessment framework that could inform future applications of pretrained models to sequential behavioral data.
+// Signature section
+#grid(
+  columns: (1fr, 1fr, 1fr),
+  align: (center, center, center),
+  [#text(weight: "bold")[Signature of\ Project Coordinator]],
+  [#text(weight: "bold")[Signature of\ DPC Member]],
+  [#text(weight: "bold")[Signature of\ HOD]],
+)

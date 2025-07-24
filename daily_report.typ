@@ -46,6 +46,7 @@
 
 // Project details
 #text(weight: "bold")[Project Batch No:]
+14C
 
 #v(0.2em)
 
