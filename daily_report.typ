@@ -11,7 +11,7 @@
   // Logo cell
   table.cell(rowspan: 1, [
     #box(width: 1.2in, height: 1.2in)[
-      #image("anits_logo.png", width: 1.2in, height: 1.2in)
+      //#image("anits_logo.png", width: 1.2in, height: 1.2in)
     ]
   ]),
 
@@ -87,7 +87,7 @@ Venkata vishaal Tirupalli (A22126510193)
 
   // Header row
   table.header(
-    [#text(weight: "bold")[Date]],
+    [#text(weight: "bold")[#h(1.5em) Date #h(1.5em)]],
     [#text(weight: "bold")[Time in Time Out]],
     [#text(weight: "bold")[Project Batch List]],
     [#text(weight: "bold")[Reg no of Students who are present]],
