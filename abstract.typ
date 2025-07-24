@@ -62,7 +62,7 @@ Modern digital interactions generate vast amounts of sequential behavioral data 
 - *Resource Optimization*: Forecasting user engagement patterns to optimize computational resources and service delivery
 - *Enhanced Human-Computer Interaction*: Understanding sequential patterns in dialogue and interaction for better conversational AI systems
 
-= What the Problem Identified
+= Problem Identified
 
 Current approaches to behavioral sequence forecasting face several critical limitations:
 
@@ -71,7 +71,7 @@ Current approaches to behavioral sequence forecasting face several critical limi
 3. *Lack of Zero-Shot Capabilities*: Current methods require substantial training data for each new behavioral domain, limiting their applicability in data-scarce scenarios
 4. *Inefficient Tokenization Approaches*: Traditional methods for converting behavioral data into forecast-ready formats often lose critical sequential information
 
-= What the Solution Suggested
+= Solution Suggested
 
 This project proposes a novel approach that adapts Chronos-Bolt's pretrained foundation model capabilities to sequential behavioral data through:
 
