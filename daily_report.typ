@@ -10,8 +10,8 @@
 
   // Logo cell
   table.cell(rowspan: 1, [
-    #box(width: 1.2in, height: 1.2in)[
-      //#image("anits_logo.png", width: 1.2in, height: 1.2in)
+    #box(width: 1.2in, height: 1.0in)[
+      #image("anits_logo.png", width: 1.2in, height: 1.3in)
     ]
   ]),
 
@@ -42,29 +42,29 @@
   DEPARTMENT OF COMPUTER SCIENCE AND ENGINEERING
 ]
 
-#v(0.5em)
+#v(0.05pt)
 
 // Project details
 #text(weight: "bold")[Project Batch No:]
 14C
 
-#v(0.2em)
+#v(0.05em)
 
 #text(weight: "bold")[Project Guide:]
 Dr. D. Naga Teja
-#v(0.2em)
+#v(0.05em)
 
 #text(weight: "bold")[List of Members:]
-#v(0.05em)
-D. Sai Venkata Chaitanya (A22126510144)
-#v(0.05em)
-B. Harsith Veera Charan (A22126510134)
-#v(0.05em)
-Wuna Akhilesh (A22126510194)
-#v(0.05em)
-M. Sai Teja (A22126510163)
-#v(0.05em)
-Venkata Vishaal Tirupalli (A22126510193)
+#v(0.05pt)
+(1) B. Harsith Veera Charan (A22126510134)
+#h(4.5em)
+(2) D. Sai Venkata Chaitanya (A22126510144)
+#v(0.05pt)
+(3) Wuna Akhilesh (A22126510194)
+#h(8em)
+(4) M. Sai Teja (A22126510163)
+#v(0.05pt)
+(5) Venkata Vishaal Tirupalli (A22126510193)
 
 #v(0.2em)
 
@@ -74,9 +74,7 @@ Venkata Vishaal Tirupalli (A22126510193)
 
 #text(size: 12pt, weight: "bold")[Diary of B.Tech Project work]
 
-#v(0.1em)
-
-#text(size: 11pt)[(in Project consultation hours , Project LAB and Other free hours)]
+#text(size: 10pt)[(in Project consultation hours , Project LAB and Other free hours)]
 
 #v(0.5em)
 
@@ -97,13 +95,10 @@ Venkata Vishaal Tirupalli (A22126510193)
   ),
 
   // Empty data rows
-  [#v(2em)], [#v(2em)], [#v(2em)], [#v(2em)], [#v(2em)], [#v(2em)],
-  [#v(2em)], [#v(2em)], [#v(2em)], [#v(2em)], [#v(2em)], [#v(2em)],
-  [#v(2em)], [#v(2em)], [#v(2em)], [#v(2em)], [#v(2em)], [#v(2em)],
-  [#v(2em)], [#v(2em)], [#v(2em)], [#v(2em)], [#v(2em)], [#v(2em)],
-  [#v(2em)], [#v(2em)], [#v(2em)], [#v(2em)], [#v(2em)], [#v(2em)],
-  [#v(2em)], [#v(2em)], [#v(2em)], [#v(2em)], [#v(2em)], [#v(2em)],
-  [#v(2em)], [#v(2em)], [#v(2em)], [#v(2em)], [#v(2em)], [#v(2em)],
+  [#v(5em)], [#v(5em)], [#v(5em)], [#v(5em)], [#v(5em)], [#v(5em)],
+  [#v(5em)], [#v(5em)], [#v(5em)], [#v(5em)], [#v(5em)], [#v(5em)],
+  [#v(5em)], [#v(5em)], [#v(5em)], [#v(5em)], [#v(5em)], [#v(5em)],
+  [#v(5em)], [#v(5em)], [#v(5em)], [#v(5em)], [#v(5em)], [#v(5em)],
 )
 
 #v(1em)
