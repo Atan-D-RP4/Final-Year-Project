@@ -4,9 +4,17 @@ Quick Setup and Demo Script for Chronos-Bolt Behavioral Forecasting
 Run this script to test the framework with sample data
 """
 
-import sys
 import subprocess
 import os
+
+import pandas as pd
+import numpy as np
+
+from chronos_behavioral_framework import (
+    ChronosBehavioralForecaster,
+    BenchmarkRunner,
+)
+from data_preparation_script import BehavioralDataLoader
 
 
 def install_dependencies():
@@ -23,8 +31,6 @@ def install_dependencies():
 
 def create_sample_data():
     """Create sample datasets for testing"""
-    import pandas as pd
-    import numpy as np
 
     # Create sample sentiment data
     np.random.seed(42)
@@ -73,12 +79,6 @@ def create_sample_data():
 def run_basic_demo():
     """Run a basic demo of the framework"""
     try:
-        from chronos_behavioral_framework import (
-            ChronosBehavioralForecaster,
-            BenchmarkRunner,
-        )
-        from data_preparation_script import BehavioralDataLoader
-
         print("\n" + "=" * 50)
         print("RUNNING CHRONOS-BOLT BEHAVIORAL FORECASTING DEMO")
         print("=" * 50)
@@ -123,13 +123,6 @@ def run_basic_demo():
 
         print("\n✓ Demo completed successfully!")
         return results
-
-    except ImportError as e:
-        print(f"✗ Import error: {e}")
-        print(
-            "Make sure all required packages are installed and the framework files are in the same directory"
-        )
-        return None
     except Exception as e:
         print(f"✗ Error running demo: {e}")
         return None

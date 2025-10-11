@@ -3,18 +3,18 @@ Chronos-Bolt for Sequential Behavioral Data Forecasting
 Framework for applying Chronos-Bolt to non-traditional time series data
 """
 
-import pandas as pd
 import numpy as np
 import torch
 from chronos import BaseChronosPipeline
-from sklearn.preprocessing import StandardScaler, MinMaxScaler
+from sklearn.preprocessing import MinMaxScaler
 from sklearn.metrics import f1_score, roc_auc_score, accuracy_score
 from scipy import stats
 import matplotlib.pyplot as plt
-import seaborn as sns
 from typing import List, Tuple, Dict, Any
 import warnings
-warnings.filterwarnings('ignore')
+
+warnings.filterwarnings("ignore")
+
 
 class BehavioralDataTokenizer:
     """
@@ -25,7 +25,7 @@ class BehavioralDataTokenizer:
     def __init__(self, window_size: int = 10, quantization_levels: int = 1000):
         self.window_size = window_size
         self.quantization_levels = quantization_levels
-        self.scaler = MinMaxScaler(feature_range=(0, quantization_levels-1))
+        self.scaler = MinMaxScaler(feature_range=(0, quantization_levels - 1))
         self.is_fitted = False
 
     def sliding_window_features(self, data: np.ndarray) -> np.ndarray:
@@ -34,7 +34,7 @@ class BehavioralDataTokenizer:
         """
         features = []
         for i in range(len(data) - self.window_size + 1):
-            window = data[i:i + self.window_size]
+            window = data[i : i + self.window_size]
 
             # Extract statistical features from window
             window_features = [
@@ -47,7 +47,7 @@ class BehavioralDataTokenizer:
                 stats.kurtosis(window),
                 np.sum(np.diff(window) > 0),  # trend up count
                 np.sum(np.diff(window) < 0),  # trend down count
-                window[-1] - window[0]        # total change
+                window[-1] - window[0],  # total change
             ]
             features.append(window_features)
 
@@ -90,12 +90,15 @@ class BehavioralDataTokenizer:
 
         return torch.tensor(pseudo_timeseries, dtype=torch.float32)
 
+
 class ChronosBehavioralForecaster:
     """
     Main class for applying Chronos-Bolt to behavioral data forecasting
     """
 
-    def __init__(self, model_name: str = "amazon/chronos-bolt-small", device: str = "cpu"):
+    def __init__(
+        self, model_name: str = "amazon/chronos-bolt-small", device: str = "cpu"
+    ):
         self.model_name = model_name
         self.device = device
         self.pipeline = None
@@ -112,7 +115,9 @@ class ChronosBehavioralForecaster:
         )
         print("Model loaded successfully!")
 
-    def prepare_data(self, data: List[float], window_size: int = 10) -> Tuple[torch.Tensor, BehavioralDataTokenizer]:
+    def prepare_data(
+        self, data: List[float], window_size: int = 10
+    ) -> Tuple[torch.Tensor, BehavioralDataTokenizer]:
         """
         Prepare behavioral data for forecasting
         """
@@ -120,7 +125,9 @@ class ChronosBehavioralForecaster:
         tokenized_data = self.tokenizer.fit_transform(data)
         return tokenized_data, self.tokenizer
 
-    def forecast_zero_shot(self, context_data: torch.Tensor, prediction_length: int = 5) -> Dict[str, Any]:
+    def forecast_zero_shot(
+        self, context_data: torch.Tensor, prediction_length: int = 5
+    ) -> Dict[str, Any]:
         """
         Perform zero-shot forecasting on behavioral data
         """
@@ -134,12 +141,14 @@ class ChronosBehavioralForecaster:
         )
 
         return {
-            'quantiles': quantiles,
-            'mean': mean,
-            'prediction_length': prediction_length
+            "quantiles": quantiles,
+            "mean": mean,
+            "prediction_length": prediction_length,
         }
 
-    def evaluate_classification(self, true_values: np.ndarray, predictions: np.ndarray) -> Dict[str, float]:
+    def evaluate_classification(
+        self, true_values: np.ndarray, predictions: np.ndarray
+    ) -> Dict[str, float]:
         """
         Evaluate forecasting performance as classification task
         """
@@ -151,19 +160,21 @@ class ChronosBehavioralForecaster:
         pred_binary = (predictions > pred_median).astype(int)
 
         metrics = {
-            'accuracy': accuracy_score(true_binary, pred_binary),
-            'f1_score': f1_score(true_binary, pred_binary, average='weighted'),
+            "accuracy": accuracy_score(true_binary, pred_binary),
+            "f1_score": f1_score(true_binary, pred_binary, average="weighted"),
         }
 
         # ROC-AUC for probabilistic predictions
         try:
-            metrics['auc'] = roc_auc_score(true_binary, predictions)
+            metrics["auc"] = roc_auc_score(true_binary, predictions)
         except:
-            metrics['auc'] = 0.5  # Random baseline
+            metrics["auc"] = 0.5  # Random baseline
 
         return metrics
 
-    def evaluate_regression(self, true_values: np.ndarray, predictions: np.ndarray) -> Dict[str, float]:
+    def evaluate_regression(
+        self, true_values: np.ndarray, predictions: np.ndarray
+    ) -> Dict[str, float]:
         """
         Evaluate forecasting performance as regression task
         """
@@ -172,16 +183,14 @@ class ChronosBehavioralForecaster:
         mape = np.mean(np.abs((true_values - predictions) / (true_values + 1e-8))) * 100
 
         # MASE (Mean Absolute Scaled Error)
-        naive_forecast = np.roll(true_values, 1)[1:]  # Use previous value as naive forecast
+        naive_forecast = np.roll(true_values, 1)[
+            1:
+        ]  # Use previous value as naive forecast
         naive_mae = np.mean(np.abs(true_values[1:] - naive_forecast))
         mase = mae / (naive_mae + 1e-8)
 
-        return {
-            'mse': mse,
-            'mae': mae,
-            'mape': mape,
-            'mase': mase
-        }
+        return {"mse": mse, "mae": mae, "mape": mape, "mase": mase}
+
 
 class BenchmarkRunner:
     """
@@ -192,8 +201,13 @@ class BenchmarkRunner:
         self.forecaster = forecaster
         self.results = {}
 
-    def run_benchmark(self, data: List[float], test_split: float = 0.2,
-                     prediction_length: int = 5, window_size: int = 10) -> Dict[str, Any]:
+    def run_benchmark(
+        self,
+        data: List[float],
+        test_split: float = 0.2,
+        prediction_length: int = 5,
+        window_size: int = 10,
+    ) -> Dict[str, Any]:
         """
         Run complete benchmark pipeline
         """
@@ -205,15 +219,17 @@ class BenchmarkRunner:
         test_data = data[split_point:]
 
         # Prepare training data
-        tokenized_train, tokenizer = self.forecaster.prepare_data(train_data, window_size)
+        tokenized_train, tokenizer = self.forecaster.prepare_data(
+            train_data, window_size
+        )
 
         # Forecast on test data
         test_contexts = []
         test_targets = []
 
         for i in range(len(test_data) - window_size - prediction_length + 1):
-            context = test_data[i:i + window_size]
-            target = test_data[i + window_size:i + window_size + prediction_length]
+            context = test_data[i : i + window_size]
+            target = test_data[i + window_size : i + window_size + prediction_length]
 
             test_contexts.append(context)
             test_targets.append(target)
@@ -221,17 +237,21 @@ class BenchmarkRunner:
         all_predictions = []
         all_targets = []
 
-        for context, target in zip(test_contexts[:min(10, len(test_contexts))],
-                                 test_targets[:min(10, len(test_targets))]):
+        for context, target in zip(
+            test_contexts[: min(10, len(test_contexts))],
+            test_targets[: min(10, len(test_targets))],
+        ):
             # Tokenize context
-            context_tokenized = tokenizer.transform(context + target[:0])  # Only context
+            context_tokenized = tokenizer.transform(
+                context + target[:0]
+            )  # Only context
 
             # Forecast
             forecast_result = self.forecaster.forecast_zero_shot(
                 context_tokenized, prediction_length
             )
 
-            predictions = forecast_result['mean'][0].numpy()
+            predictions = forecast_result["mean"][0].numpy()
             all_predictions.extend(predictions)
             all_targets.extend(target)
 
@@ -239,21 +259,25 @@ class BenchmarkRunner:
         all_predictions = np.array(all_predictions)
         all_targets = np.array(all_targets)
 
-        classification_metrics = self.forecaster.evaluate_classification(all_targets, all_predictions)
-        regression_metrics = self.forecaster.evaluate_regression(all_targets, all_predictions)
+        classification_metrics = self.forecaster.evaluate_classification(
+            all_targets, all_predictions
+        )
+        regression_metrics = self.forecaster.evaluate_regression(
+            all_targets, all_predictions
+        )
 
         self.results = {
-            'classification_metrics': classification_metrics,
-            'regression_metrics': regression_metrics,
-            'predictions': all_predictions,
-            'targets': all_targets,
-            'data_info': {
-                'total_samples': len(data),
-                'train_samples': len(train_data),
-                'test_samples': len(test_data),
-                'prediction_length': prediction_length,
-                'window_size': window_size
-            }
+            "classification_metrics": classification_metrics,
+            "regression_metrics": regression_metrics,
+            "predictions": all_predictions,
+            "targets": all_targets,
+            "data_info": {
+                "total_samples": len(data),
+                "train_samples": len(train_data),
+                "test_samples": len(test_data),
+                "prediction_length": prediction_length,
+                "window_size": window_size,
+            },
         }
 
         return self.results
@@ -264,20 +288,20 @@ class BenchmarkRunner:
             print("No results to display. Run benchmark first.")
             return
 
-        print("\n" + "="*50)
+        print("\n" + "=" * 50)
         print("CHRONOS-BOLT BEHAVIORAL FORECASTING BENCHMARK")
-        print("="*50)
+        print("=" * 50)
 
         print("\nClassification Metrics:")
-        for metric, value in self.results['classification_metrics'].items():
+        for metric, value in self.results["classification_metrics"].items():
             print(f"  {metric.upper()}: {value:.4f}")
 
         print("\nRegression Metrics:")
-        for metric, value in self.results['regression_metrics'].items():
+        for metric, value in self.results["regression_metrics"].items():
             print(f"  {metric.upper()}: {value:.4f}")
 
         print("\nData Information:")
-        for key, value in self.results['data_info'].items():
+        for key, value in self.results["data_info"].items():
             print(f"  {key}: {value}")
 
     def plot_results(self):
@@ -286,45 +310,48 @@ class BenchmarkRunner:
             print("No results to plot. Run benchmark first.")
             return
 
-        predictions = self.results['predictions']
-        targets = self.results['targets']
+        predictions = self.results["predictions"]
+        targets = self.results["targets"]
 
         plt.figure(figsize=(12, 8))
 
         # Subplot 1: Predictions vs Targets
         plt.subplot(2, 2, 1)
         plt.scatter(targets, predictions, alpha=0.6)
-        plt.plot([targets.min(), targets.max()], [targets.min(), targets.max()], 'r--', lw=2)
-        plt.xlabel('True Values')
-        plt.ylabel('Predictions')
-        plt.title('Predictions vs True Values')
+        plt.plot(
+            [targets.min(), targets.max()], [targets.min(), targets.max()], "r--", lw=2
+        )
+        plt.xlabel("True Values")
+        plt.ylabel("Predictions")
+        plt.title("Predictions vs True Values")
 
         # Subplot 2: Time series plot
         plt.subplot(2, 2, 2)
-        plt.plot(targets, label='True', alpha=0.7)
-        plt.plot(predictions, label='Predicted', alpha=0.7)
-        plt.xlabel('Time Step')
-        plt.ylabel('Value')
-        plt.title('Time Series Comparison')
+        plt.plot(targets, label="True", alpha=0.7)
+        plt.plot(predictions, label="Predicted", alpha=0.7)
+        plt.xlabel("Time Step")
+        plt.ylabel("Value")
+        plt.title("Time Series Comparison")
         plt.legend()
 
         # Subplot 3: Residuals
         plt.subplot(2, 2, 3)
         residuals = targets - predictions
         plt.hist(residuals, bins=20, alpha=0.7)
-        plt.xlabel('Residuals')
-        plt.ylabel('Frequency')
-        plt.title('Residual Distribution')
+        plt.xlabel("Residuals")
+        plt.ylabel("Frequency")
+        plt.title("Residual Distribution")
 
         # Subplot 4: Error over time
         plt.subplot(2, 2, 4)
         plt.plot(np.abs(residuals))
-        plt.xlabel('Time Step')
-        plt.ylabel('Absolute Error')
-        plt.title('Absolute Error Over Time')
+        plt.xlabel("Time Step")
+        plt.ylabel("Absolute Error")
+        plt.title("Absolute Error Over Time")
 
         plt.tight_layout()
         plt.show()
+
 
 # Example usage function
 def run_sentiment_analysis_example():
@@ -334,25 +361,28 @@ def run_sentiment_analysis_example():
     # Generate synthetic sentiment data (replace with your actual data)
     np.random.seed(42)
     n_samples = 200
-    time_steps = np.linspace(0, 4*np.pi, n_samples)
+    time_steps = np.linspace(0, 4 * np.pi, n_samples)
 
     # Create synthetic sentiment scores with trend and noise
     sentiment_scores = (
-        0.5 + 0.3 * np.sin(time_steps) +
-        0.2 * np.sin(3 * time_steps) +
-        0.1 * np.random.randn(n_samples) +
-        0.001 * time_steps  # Slight upward trend
+        0.5
+        + 0.3 * np.sin(time_steps)
+        + 0.2 * np.sin(3 * time_steps)
+        + 0.1 * np.random.randn(n_samples)
+        + 0.001 * time_steps  # Slight upward trend
     )
 
     # Normalize to [0, 1] range (typical for sentiment scores)
-    sentiment_scores = (sentiment_scores - sentiment_scores.min()) / (sentiment_scores.max() - sentiment_scores.min())
+    sentiment_scores = (sentiment_scores - sentiment_scores.min()) / (
+        sentiment_scores.max() - sentiment_scores.min()
+    )
 
     print("Generated synthetic sentiment data with", len(sentiment_scores), "samples")
 
     # Initialize forecaster
     forecaster = ChronosBehavioralForecaster(
         model_name="amazon/chronos-bolt-small",
-        device="cpu"  # Use "cuda" if you have GPU
+        device="cpu",  # Use "cuda" if you have GPU
     )
 
     # Run benchmark
@@ -361,7 +391,7 @@ def run_sentiment_analysis_example():
         data=sentiment_scores.tolist(),
         test_split=0.2,
         prediction_length=5,
-        window_size=15
+        window_size=15,
     )
 
     # Display results
@@ -369,6 +399,7 @@ def run_sentiment_analysis_example():
     benchmark.plot_results()
 
     return results
+
 
 if __name__ == "__main__":
     # Run the example

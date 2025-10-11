@@ -1,22 +1,32 @@
 """
 Data Preparation Scripts for Different Types of Behavioral Data
-Supports: Sentiment scores, User clickstreams, Engagement metrics, etc.
+Supports: Sentiment scores, User clickstreams, Engagement metrics, IMF macroeconomic data, etc.
 """
 
 import pandas as pd
 import numpy as np
-from typing import List, Dict, Any, Tuple
+from typing import List, Dict, Any, Optional
 import json
-from datetime import datetime, timedelta
-import re
+from imf_data_loader import IMFDataLoader
+
 
 class BehavioralDataLoader:
     """
-    Load and preprocess various types of behavioral data
+    Load and preprocess various types of behavioral data including macroeconomic indicators
     """
+    
+    def __init__(self):
+        """Initialize data loader with IMF data capability"""
+        self.imf_loader = None
+    
+    def _get_imf_loader(self) -> IMFDataLoader:
+        """Lazy initialization of IMF loader"""
+        if self.imf_loader is None:
+            self.imf_loader = IMFDataLoader()
+        return self.imf_loader
 
     @staticmethod
-    def load_sentiment_data(file_path: str = None, format: str = 'csv') -> List[float]:
+    def load_sentiment_data(file_path: str = None, format: str = "csv") -> List[float]:
         """
         Load sentiment score data from various formats
         """
@@ -24,22 +34,24 @@ class BehavioralDataLoader:
             # Generate synthetic sentiment data for testing
             return BehavioralDataLoader.generate_synthetic_sentiment(500)
 
-        if format.lower() == 'csv':
+        if format.lower() == "csv":
             df = pd.read_csv(file_path)
             # Assume sentiment column exists (adjust column name as needed)
-            sentiment_cols = ['sentiment', 'sentiment_score', 'score', 'rating']
+            sentiment_cols = ["sentiment", "sentiment_score", "score", "rating"]
             for col in sentiment_cols:
                 if col in df.columns:
                     return df[col].tolist()
-            raise ValueError(f"No sentiment column found. Available columns: {df.columns.tolist()}")
+            raise ValueError(
+                f"No sentiment column found. Available columns: {df.columns.tolist()}"
+            )
 
-        elif format.lower() == 'json':
-            with open(file_path, 'r') as f:
+        elif format.lower() == "json":
+            with open(file_path, "r") as f:
                 data = json.load(f)
             # Assume data is list of dicts with sentiment scores
             if isinstance(data, list) and len(data) > 0:
                 if isinstance(data[0], dict):
-                    sentiment_keys = ['sentiment', 'sentiment_score', 'score']
+                    sentiment_keys = ["sentiment", "sentiment_score", "score"]
                     for key in sentiment_keys:
                         if key in data[0]:
                             return [item[key] for item in data]
@@ -58,21 +70,21 @@ class BehavioralDataLoader:
         df = pd.read_csv(file_path)
 
         # Convert clickstream events to numeric values
-        if 'event_type' in df.columns:
+        if "event_type" in df.columns:
             event_mapping = {
-                'click': 1.0,
-                'scroll': 0.5,
-                'hover': 0.3,
-                'page_view': 0.8,
-                'purchase': 2.0,
-                'add_to_cart': 1.5,
-                'search': 0.7,
-                'exit': 0.0
+                "click": 1.0,
+                "scroll": 0.5,
+                "hover": 0.3,
+                "page_view": 0.8,
+                "purchase": 2.0,
+                "add_to_cart": 1.5,
+                "search": 0.7,
+                "exit": 0.0,
             }
 
             # Map events to numeric values
             numeric_sequence = []
-            for event in df['event_type']:
+            for event in df["event_type"]:
                 numeric_sequence.append(event_mapping.get(event.lower(), 0.5))
 
             return numeric_sequence
@@ -90,11 +102,13 @@ class BehavioralDataLoader:
         df = pd.read_csv(file_path)
 
         # Combine multiple engagement metrics
-        engagement_cols = ['likes', 'shares', 'comments', 'views', 'engagement_rate']
+        engagement_cols = ["likes", "shares", "comments", "views", "engagement_rate"]
         available_cols = [col for col in engagement_cols if col in df.columns]
 
         if not available_cols:
-            raise ValueError(f"No engagement columns found. Available: {df.columns.tolist()}")
+            raise ValueError(
+                f"No engagement columns found. Available: {df.columns.tolist()}"
+            )
 
         # Normalize and combine metrics
         engagement_scores = []
@@ -105,8 +119,10 @@ class BehavioralDataLoader:
         # Normalize to [0, 1] range
         min_score, max_score = min(engagement_scores), max(engagement_scores)
         if max_score > min_score:
-            engagement_scores = [(score - min_score) / (max_score - min_score)
-                               for score in engagement_scores]
+            engagement_scores = [
+                (score - min_score) / (max_score - min_score)
+                for score in engagement_scores
+            ]
 
         return engagement_scores
 
@@ -121,15 +137,31 @@ class BehavioralDataLoader:
         df = pd.read_csv(file_path)
 
         # Assume dialogue data has 'message' and 'sentiment' columns
-        if 'sentiment' in df.columns:
-            return df['sentiment'].tolist()
-        elif 'message' in df.columns:
+        if "sentiment" in df.columns:
+            return df["sentiment"].tolist()
+        elif "message" in df.columns:
             # Simple sentiment analysis (replace with actual sentiment analyzer)
             sentiments = []
-            positive_words = ['good', 'great', 'excellent', 'amazing', 'love', 'like', 'happy']
-            negative_words = ['bad', 'terrible', 'awful', 'hate', 'dislike', 'sad', 'angry']
+            positive_words = [
+                "good",
+                "great",
+                "excellent",
+                "amazing",
+                "love",
+                "like",
+                "happy",
+            ]
+            negative_words = [
+                "bad",
+                "terrible",
+                "awful",
+                "hate",
+                "dislike",
+                "sad",
+                "angry",
+            ]
 
-            for message in df['message']:
+            for message in df["message"]:
                 if pd.isna(message):
                     sentiments.append(0.5)
                     continue
@@ -155,15 +187,15 @@ class BehavioralDataLoader:
     def generate_synthetic_sentiment(n_samples: int = 500) -> List[float]:
         """Generate synthetic sentiment score data"""
         np.random.seed(42)
-        t = np.linspace(0, 4*np.pi, n_samples)
+        t = np.linspace(0, 4 * np.pi, n_samples)
 
         # Create sentiment pattern with trends and noise
         sentiment = (
-            0.5 +  # Baseline neutral sentiment
-            0.2 * np.sin(t) +  # Daily pattern
-            0.1 * np.sin(5*t) +  # Shorter cycles
-            0.05 * np.cumsum(np.random.randn(n_samples)) / n_samples +  # Random walk
-            0.1 * np.random.randn(n_samples)  # Noise
+            0.5  # Baseline neutral sentiment
+            + 0.2 * np.sin(t)  # Daily pattern
+            + 0.1 * np.sin(5 * t)  # Shorter cycles
+            + 0.05 * np.cumsum(np.random.randn(n_samples)) / n_samples  # Random walk
+            + 0.1 * np.random.randn(n_samples)  # Noise
         )
 
         # Clip to [0, 1] range
@@ -239,8 +271,9 @@ class BehavioralDataLoader:
         for i in range(n_samples):
             # Sentiment tends to persist but can change
             momentum = 0.8
-            current_sentiment = (momentum * current_sentiment +
-                               (1 - momentum) * (0.5 + np.random.normal(0, 0.2)))
+            current_sentiment = momentum * current_sentiment + (1 - momentum) * (
+                0.5 + np.random.normal(0, 0.2)
+            )
 
             # Add conversational dynamics
             if i > 0:
@@ -255,6 +288,7 @@ class BehavioralDataLoader:
 
         return sentiments
 
+
 class DatasetBenchmarker:
     """
     Run benchmarks on multiple datasets
@@ -264,10 +298,13 @@ class DatasetBenchmarker:
         self.forecaster = forecaster
         self.results = {}
 
-    def run_multiple_datasets(self, datasets: Dict[str, List[float]],
-                            test_split: float = 0.2,
-                            prediction_length: int = 5,
-                            window_size: int = 10) -> Dict[str, Any]:
+    def run_multiple_datasets(
+        self,
+        datasets: Dict[str, List[float]],
+        test_split: float = 0.2,
+        prediction_length: int = 5,
+        window_size: int = 10,
+    ) -> Dict[str, Any]:
         """
         Run benchmarks on multiple datasets
         """
@@ -276,14 +313,14 @@ class DatasetBenchmarker:
         all_results = {}
 
         for dataset_name, data in datasets.items():
-            print(f"\n{'='*20} {dataset_name.upper()} {'='*20}")
+            print(f"\n{'=' * 20} {dataset_name.upper()} {'=' * 20}")
 
             benchmark = BenchmarkRunner(self.forecaster)
             results = benchmark.run_benchmark(
                 data=data,
                 test_split=test_split,
                 prediction_length=prediction_length,
-                window_size=window_size
+                window_size=window_size,
             )
 
             all_results[dataset_name] = results
@@ -299,38 +336,44 @@ class DatasetBenchmarker:
 
         # Extract metrics for comparison
         dataset_names = list(results.keys())
-        f1_scores = [results[name]['classification_metrics']['f1_score'] for name in dataset_names]
-        mase_scores = [results[name]['regression_metrics']['mase'] for name in dataset_names]
+        f1_scores = [
+            results[name]["classification_metrics"]["f1_score"]
+            for name in dataset_names
+        ]
+        mase_scores = [
+            results[name]["regression_metrics"]["mase"] for name in dataset_names
+        ]
 
         fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5))
 
         # F1 scores
         ax1.bar(dataset_names, f1_scores)
-        ax1.set_title('F1 Scores Across Datasets')
-        ax1.set_ylabel('F1 Score')
-        ax1.tick_params(axis='x', rotation=45)
+        ax1.set_title("F1 Scores Across Datasets")
+        ax1.set_ylabel("F1 Score")
+        ax1.tick_params(axis="x", rotation=45)
 
         # MASE scores
         ax2.bar(dataset_names, mase_scores)
-        ax2.set_title('MASE Scores Across Datasets')
-        ax2.set_ylabel('MASE')
-        ax2.tick_params(axis='x', rotation=45)
+        ax2.set_title("MASE Scores Across Datasets")
+        ax2.set_ylabel("MASE")
+        ax2.tick_params(axis="x", rotation=45)
 
         plt.tight_layout()
         plt.show()
 
         # Print summary table
-        print("\n" + "="*60)
+        print("\n" + "=" * 60)
         print("PERFORMANCE COMPARISON ACROSS DATASETS")
-        print("="*60)
+        print("=" * 60)
         print(f"{'Dataset':<20} {'F1 Score':<12} {'MASE':<12} {'Accuracy':<12}")
-        print("-"*60)
+        print("-" * 60)
 
         for name in dataset_names:
-            f1 = results[name]['classification_metrics']['f1_score']
-            mase = results[name]['regression_metrics']['mase']
-            acc = results[name]['classification_metrics']['accuracy']
+            f1 = results[name]["classification_metrics"]["f1_score"]
+            mase = results[name]["regression_metrics"]["mase"]
+            acc = results[name]["classification_metrics"]["accuracy"]
             print(f"{name:<20} {f1:<12.4f} {mase:<12.4f} {acc:<12.4f}")
+
 
 # Example usage function
 def run_comprehensive_benchmark():
@@ -343,35 +386,34 @@ def run_comprehensive_benchmark():
     loader = BehavioralDataLoader()
 
     datasets = {
-        'sentiment_scores': loader.load_sentiment_data(),
-        'clickstream': loader.load_clickstream_data(),
-        'engagement': loader.load_engagement_data(),
-        'dialogue_sentiment': loader.load_dialogue_sentiment()
+        "sentiment_scores": loader.load_sentiment_data(),
+        "clickstream": loader.load_clickstream_data(),
+        "engagement": loader.load_engagement_data(),
+        "dialogue_sentiment": loader.load_dialogue_sentiment(),
     }
 
     print("Loaded datasets:")
     for name, data in datasets.items():
-        print(f"  {name}: {len(data)} samples, range: [{min(data):.3f}, {max(data):.3f}]")
+        print(
+            f"  {name}: {len(data)} samples, range: [{min(data):.3f}, {max(data):.3f}]"
+        )
 
     # Initialize forecaster
     forecaster = ChronosBehavioralForecaster(
-        model_name="amazon/chronos-bolt-small",
-        device="cpu"
+        model_name="amazon/chronos-bolt-small", device="cpu"
     )
 
     # Run benchmarks
     benchmarker = DatasetBenchmarker(forecaster)
     results = benchmarker.run_multiple_datasets(
-        datasets=datasets,
-        test_split=0.2,
-        prediction_length=5,
-        window_size=15
+        datasets=datasets, test_split=0.2, prediction_length=5, window_size=15
     )
 
     # Compare results
     benchmarker.compare_datasets(results)
 
     return results
+
 
 if __name__ == "__main__":
     results = run_comprehensive_benchmark()
