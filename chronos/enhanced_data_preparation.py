@@ -14,11 +14,11 @@ class EnhancedBehavioralDataLoader:
     """
     Enhanced data loader with IMF macroeconomic data integration
     """
-    
+
     def __init__(self):
         """Initialize data loader with IMF data capability"""
         self.imf_loader = None
-    
+
     def _get_imf_loader(self) -> IMFDataLoader:
         """Lazy initialization of IMF loader"""
         if self.imf_loader is None:
@@ -26,27 +26,31 @@ class EnhancedBehavioralDataLoader:
         return self.imf_loader
 
     # IMF Macroeconomic Data Loading Methods
-    def load_imf_inflation_data(self, countries: List[str] = None, 
-                               start_year: int = 2000, end_year: int = 2023,
-                               country_to_use: str = None) -> List[float]:
+    def load_imf_inflation_data(
+        self,
+        countries: List[str] | None = None,
+        start_year: int = 2000,
+        end_year: int = 2023,
+        country_to_use: str | None = None,
+    ) -> List[float]:
         """
         Load inflation data from IMF for forecasting
-        
+
         Args:
             countries: List of country codes to fetch
             start_year: Start year for data
-            end_year: End year for data  
+            end_year: End year for data
             country_to_use: Specific country to return (if None, returns first available)
-            
+
         Returns:
             List of inflation values for time series forecasting
         """
         if countries is None:
-            countries = ['US']  # Default to US data
-            
+            countries = ["US"]  # Default to US data
+
         imf_loader = self._get_imf_loader()
         inflation_data = imf_loader.get_inflation_data(countries, start_year, end_year)
-        
+
         # Return data for specified country or first available
         if country_to_use and country_to_use in inflation_data:
             return inflation_data[country_to_use]
@@ -55,28 +59,32 @@ class EnhancedBehavioralDataLoader:
         else:
             print("Warning: No inflation data available, generating synthetic data")
             return self.generate_synthetic_inflation(end_year - start_year + 1)
-    
-    def load_imf_gdp_growth_data(self, countries: List[str] = None,
-                                start_year: int = 2000, end_year: int = 2023,
-                                country_to_use: str = None) -> List[float]:
+
+    def load_imf_gdp_growth_data(
+        self,
+        countries: List[str] | None = None,
+        start_year: int = 2000,
+        end_year: int = 2023,
+        country_to_use: str | None = None,
+    ) -> List[float]:
         """
         Load GDP growth data from IMF for forecasting
-        
+
         Args:
             countries: List of country codes to fetch
             start_year: Start year for data
             end_year: End year for data
             country_to_use: Specific country to return (if None, returns first available)
-            
+
         Returns:
             List of GDP growth values for time series forecasting
         """
         if countries is None:
-            countries = ['US']  # Default to US data
-            
+            countries = ["US"]  # Default to US data
+
         imf_loader = self._get_imf_loader()
         gdp_data = imf_loader.get_gdp_growth_data(countries, start_year, end_year)
-        
+
         # Return data for specified country or first available
         if country_to_use and country_to_use in gdp_data:
             return gdp_data[country_to_use]
@@ -85,19 +93,23 @@ class EnhancedBehavioralDataLoader:
         else:
             print("Warning: No GDP data available, generating synthetic data")
             return self.generate_synthetic_gdp_growth(end_year - start_year + 1)
-    
-    def load_imf_exchange_rate_data(self, base_currency: str = 'USD',
-                                   target_currency: str = 'EUR',
-                                   start_year: int = 2000, end_year: int = 2023) -> List[float]:
+
+    def load_imf_exchange_rate_data(
+        self,
+        base_currency: str = "USD",
+        target_currency: str = "EUR",
+        start_year: int = 2000,
+        end_year: int = 2023,
+    ) -> List[float]:
         """
         Load exchange rate data from IMF for forecasting
-        
+
         Args:
             base_currency: Base currency code
             target_currency: Target currency code
             start_year: Start year for data
             end_year: End year for data
-            
+
         Returns:
             List of exchange rate values for time series forecasting
         """
@@ -105,75 +117,99 @@ class EnhancedBehavioralDataLoader:
         fx_data = imf_loader.fetch_exchange_rates(
             base_currency, [target_currency], start_year, end_year
         )
-        
+
         pair_key = f"{base_currency}/{target_currency}"
         if pair_key in fx_data:
             return fx_data[pair_key]
         else:
-            print(f"Warning: No exchange rate data for {pair_key}, generating synthetic data")
+            print(
+                f"Warning: No exchange rate data for {pair_key}, generating synthetic data"
+            )
             return self.generate_synthetic_exchange_rate(end_year - start_year + 1)
-    
-    def load_imf_multivariate_data(self, country: str = 'US',
-                                  indicators: List[str] = None,
-                                  start_year: int = 2000, end_year: int = 2023,
-                                  target_indicator: str = None) -> Dict[str, List[float]]:
+
+    def load_imf_multivariate_data(
+        self,
+        country: str = "US",
+        indicators: List[str] | None = None,
+        start_year: int = 2000,
+        end_year: int = 2023,
+        target_indicator: str | None = None,
+    ) -> Dict[str, List[float]]:
         """
         Load multiple IMF indicators for a country
-        
+
         Args:
             country: Country code
             indicators: List of indicator names
             start_year: Start year for data
             end_year: End year for data
             target_indicator: Primary indicator to forecast (others as features)
-            
+
         Returns:
             Dictionary with indicator names as keys and time series as values
         """
         if indicators is None:
-            indicators = ['gdp_growth', 'inflation']  # Default indicators
-            
+            indicators = ["gdp_growth", "inflation"]  # Default indicators
+
         imf_loader = self._get_imf_loader()
-        
+
         try:
-            df = imf_loader.create_multivariate_dataset(country, indicators, start_year, end_year)
-            
+            df = imf_loader.create_multivariate_dataset(
+                country, indicators, start_year, end_year
+            )
+
             if df.empty:
-                print(f"Warning: No multivariate data for {country}, using synthetic data")
+                print(
+                    f"Warning: No multivariate data for {country}, using synthetic data"
+                )
                 result = {}
                 for indicator in indicators:
-                    if indicator == 'gdp_growth':
-                        result[indicator] = self.generate_synthetic_gdp_growth(end_year - start_year + 1)
-                    elif indicator == 'inflation':
-                        result[indicator] = self.generate_synthetic_inflation(end_year - start_year + 1)
+                    if indicator == "gdp_growth":
+                        result[indicator] = self.generate_synthetic_gdp_growth(
+                            end_year - start_year + 1
+                        )
+                    elif indicator == "inflation":
+                        result[indicator] = self.generate_synthetic_inflation(
+                            end_year - start_year + 1
+                        )
                     else:
-                        result[indicator] = self.generate_synthetic_economic_indicator(end_year - start_year + 1)
+                        result[indicator] = self.generate_synthetic_economic_indicator(
+                            end_year - start_year + 1
+                        )
                 return result
-            
+
             # Convert DataFrame to dictionary of lists
             result = {}
             for col in df.columns:
-                if col != 'year':
+                if col != "year":
                     result[col] = df[col].tolist()
-            
+
             return result
-            
+
         except Exception as e:
             print(f"Error loading multivariate data: {e}")
             # Fallback to synthetic data
             result = {}
             for indicator in indicators:
-                if indicator == 'gdp_growth':
-                    result[indicator] = self.generate_synthetic_gdp_growth(end_year - start_year + 1)
-                elif indicator == 'inflation':
-                    result[indicator] = self.generate_synthetic_inflation(end_year - start_year + 1)
+                if indicator == "gdp_growth":
+                    result[indicator] = self.generate_synthetic_gdp_growth(
+                        end_year - start_year + 1
+                    )
+                elif indicator == "inflation":
+                    result[indicator] = self.generate_synthetic_inflation(
+                        end_year - start_year + 1
+                    )
                 else:
-                    result[indicator] = self.generate_synthetic_economic_indicator(end_year - start_year + 1)
+                    result[indicator] = self.generate_synthetic_economic_indicator(
+                        end_year - start_year + 1
+                    )
             return result
 
     # Legacy behavioral data methods (from original script)
     @staticmethod
-    def load_sentiment_data(file_path: str = None, format: str = "csv") -> List[float]:
+    def load_sentiment_data(
+        file_path: str | None = None, format: str = "csv"
+    ) -> List[float] | None:
         """Load sentiment score data from various formats"""
         if file_path is None:
             return EnhancedBehavioralDataLoader.generate_synthetic_sentiment(500)
@@ -184,7 +220,9 @@ class EnhancedBehavioralDataLoader:
             for col in sentiment_cols:
                 if col in df.columns:
                     return df[col].tolist()
-            raise ValueError(f"No sentiment column found. Available columns: {df.columns.tolist()}")
+            raise ValueError(
+                f"No sentiment column found. Available columns: {df.columns.tolist()}"
+            )
 
         elif format.lower() == "json":
             with open(file_path, "r") as f:
@@ -200,7 +238,7 @@ class EnhancedBehavioralDataLoader:
             raise ValueError("Could not extract sentiment scores from JSON data")
 
     @staticmethod
-    def load_clickstream_data(file_path: str = None) -> List[float]:
+    def load_clickstream_data(file_path: str | None = None) -> List[float]:
         """Convert clickstream data to numeric sequence"""
         if file_path is None:
             return EnhancedBehavioralDataLoader.generate_synthetic_clickstream(300)
@@ -209,8 +247,14 @@ class EnhancedBehavioralDataLoader:
 
         if "event_type" in df.columns:
             event_mapping = {
-                "click": 1.0, "scroll": 0.5, "hover": 0.3, "page_view": 0.8,
-                "purchase": 2.0, "add_to_cart": 1.5, "search": 0.7, "exit": 0.0,
+                "click": 1.0,
+                "scroll": 0.5,
+                "hover": 0.3,
+                "page_view": 0.8,
+                "purchase": 2.0,
+                "add_to_cart": 1.5,
+                "search": 0.7,
+                "exit": 0.0,
             }
 
             numeric_sequence = []
@@ -222,7 +266,7 @@ class EnhancedBehavioralDataLoader:
         raise ValueError("No 'event_type' column found in clickstream data")
 
     @staticmethod
-    def load_engagement_data(file_path: str = None) -> List[float]:
+    def load_engagement_data(file_path: str | None = None) -> List[float]:
         """Load user engagement metrics"""
         if file_path is None:
             return EnhancedBehavioralDataLoader.generate_synthetic_engagement(400)
@@ -232,7 +276,9 @@ class EnhancedBehavioralDataLoader:
         available_cols = [col for col in engagement_cols if col in df.columns]
 
         if not available_cols:
-            raise ValueError(f"No engagement columns found. Available: {df.columns.tolist()}")
+            raise ValueError(
+                f"No engagement columns found. Available: {df.columns.tolist()}"
+            )
 
         engagement_scores = []
         for _, row in df.iterrows():
@@ -319,71 +365,80 @@ class EnhancedBehavioralDataLoader:
     def generate_synthetic_inflation(n_samples: int = 24) -> List[float]:
         """Generate realistic synthetic inflation data"""
         np.random.seed(42)
-        
+
         # Generate inflation with cycles and shocks
-        time_trend = np.linspace(0, 4*np.pi, n_samples)
-        cyclical = 1.0 * np.sin(time_trend) + 0.5 * np.sin(2*time_trend)
-        
+        time_trend = np.linspace(0, 4 * np.pi, n_samples)
+        cyclical = 1.0 * np.sin(time_trend) + 0.5 * np.sin(2 * time_trend)
+
         # Add occasional inflation shocks
         shocks = np.zeros(n_samples)
-        shock_years = np.random.choice(n_samples, size=max(1, n_samples//8), replace=False)
+        shock_years = np.random.choice(
+            n_samples, size=max(1, n_samples // 8), replace=False
+        )
         shocks[shock_years] = np.random.normal(0, 3, len(shock_years))
-        
+
         base_inflation = 2.5  # Target inflation
-        inflation = base_inflation + cyclical + shocks + 0.5 * np.random.randn(n_samples)
+        inflation = (
+            base_inflation + cyclical + shocks + 0.5 * np.random.randn(n_samples)
+        )
         inflation = np.maximum(inflation, -2.0)  # Prevent extreme deflation
-        
+
         return inflation.tolist()
 
     @staticmethod
     def generate_synthetic_gdp_growth(n_samples: int = 24) -> List[float]:
         """Generate realistic synthetic GDP growth data"""
         np.random.seed(123)
-        
+
         # Generate growth with business cycles and recessions
-        time_trend = np.linspace(0, 2*np.pi, n_samples)
+        time_trend = np.linspace(0, 2 * np.pi, n_samples)
         business_cycle = 1.5 * np.sin(time_trend)
-        
+
         # Add recession shocks
         recession_prob = 0.1  # 10% chance per year
         recessions = np.random.random(n_samples) < recession_prob
         recession_impact = np.where(recessions, np.random.normal(-4, 2, n_samples), 0)
-        
+
         base_growth = 2.5  # Long-term growth rate
-        growth = base_growth + business_cycle + recession_impact + 0.8 * np.random.randn(n_samples)
-        
+        growth = (
+            base_growth
+            + business_cycle
+            + recession_impact
+            + 0.8 * np.random.randn(n_samples)
+        )
+
         return growth.tolist()
 
     @staticmethod
     def generate_synthetic_exchange_rate(n_samples: int = 24) -> List[float]:
         """Generate realistic synthetic exchange rate data"""
         np.random.seed(789)
-        
+
         base_rate = 1.1  # EUR/USD approximate
-        
+
         # Generate with trend and volatility
-        time_trend = np.linspace(0, 2*np.pi, n_samples)
+        time_trend = np.linspace(0, 2 * np.pi, n_samples)
         trend = 0.02 * np.sin(time_trend)  # Cyclical trend
         volatility = 0.1 * np.random.randn(n_samples)  # Random volatility
-        
+
         rates = base_rate * (1 + trend + volatility)
         rates = np.maximum(rates, 0.01)  # Ensure positive rates
-        
+
         return rates.tolist()
 
     @staticmethod
     def generate_synthetic_economic_indicator(n_samples: int = 24) -> List[float]:
         """Generate generic economic indicator data"""
         np.random.seed(456)
-        
+
         # Generate with trend and cycles
-        time_trend = np.linspace(0, 3*np.pi, n_samples)
+        time_trend = np.linspace(0, 3 * np.pi, n_samples)
         trend = 0.1 * np.sin(time_trend)
         noise = 0.2 * np.random.randn(n_samples)
-        
+
         base_value = 50  # Neutral level
         indicator = base_value + 10 * trend + 5 * noise
-        
+
         return indicator.tolist()
 
 
@@ -394,84 +449,89 @@ def run_imf_data_demo():
     print("=" * 60)
     print("IMF MACROECONOMIC DATA FORECASTING DEMO")
     print("=" * 60)
-    
+
     # Initialize enhanced data loader
     loader = EnhancedBehavioralDataLoader()
-    
+
     # Test different IMF data types
     datasets = {}
-    
+
     print("\n1. Loading US Inflation Data...")
     try:
-        inflation_data = loader.load_imf_inflation_data(['US'], 2010, 2023, 'US')
-        datasets['us_inflation'] = inflation_data
+        inflation_data = loader.load_imf_inflation_data(["US"], 2010, 2023, "US")
+        datasets["us_inflation"] = inflation_data
         print(f"   ✓ Loaded {len(inflation_data)} inflation data points")
         print(f"   Range: [{min(inflation_data):.2f}%, {max(inflation_data):.2f}%]")
     except Exception as e:
         print(f"   ✗ Error loading inflation data: {e}")
-    
+
     print("\n2. Loading US GDP Growth Data...")
     try:
-        gdp_data = loader.load_imf_gdp_growth_data(['US'], 2010, 2023, 'US')
-        datasets['us_gdp_growth'] = gdp_data
+        gdp_data = loader.load_imf_gdp_growth_data(["US"], 2010, 2023, "US")
+        datasets["us_gdp_growth"] = gdp_data
         print(f"   ✓ Loaded {len(gdp_data)} GDP growth data points")
         print(f"   Range: [{min(gdp_data):.2f}%, {max(gdp_data):.2f}%]")
     except Exception as e:
         print(f"   ✗ Error loading GDP data: {e}")
-    
+
     print("\n3. Loading USD/EUR Exchange Rate...")
     try:
-        fx_data = loader.load_imf_exchange_rate_data('USD', 'EUR', 2010, 2023)
-        datasets['usd_eur'] = fx_data
+        fx_data = loader.load_imf_exchange_rate_data("USD", "EUR", 2010, 2023)
+        datasets["usd_eur"] = fx_data
         print(f"   ✓ Loaded {len(fx_data)} exchange rate data points")
         print(f"   Range: [{min(fx_data):.4f}, {max(fx_data):.4f}]")
     except Exception as e:
         print(f"   ✗ Error loading exchange rate data: {e}")
-    
+
     print("\n4. Loading Multivariate Economic Data...")
     try:
-        mv_data = loader.load_imf_multivariate_data('US', ['gdp_growth', 'inflation'], 2010, 2023)
+        mv_data = loader.load_imf_multivariate_data(
+            "US", ["gdp_growth", "inflation"], 2010, 2023
+        )
         print(f"   ✓ Loaded multivariate data with indicators: {list(mv_data.keys())}")
         for indicator, data in mv_data.items():
-            print(f"     {indicator}: {len(data)} points, range: [{min(data):.2f}, {max(data):.2f}]")
+            print(
+                f"     {indicator}: {len(data)} points, range: [{min(data):.2f}, {max(data):.2f}]"
+            )
         datasets.update(mv_data)
     except Exception as e:
         print(f"   ✗ Error loading multivariate data: {e}")
-    
+
     print(f"\n5. Summary: Loaded {len(datasets)} datasets for forecasting")
-    
+
     # Run forecasting on one dataset
     if datasets:
         print("\n6. Running Chronos Forecasting on Inflation Data...")
         try:
-            from chronos_behavioral_framework import ChronosBehavioralForecaster, BenchmarkRunner
-            
+            from chronos_behavioral_framework import (
+                ChronosBehavioralForecaster,
+                BenchmarkRunner,
+            )
+
             # Use inflation data if available, otherwise first available dataset
-            forecast_data = datasets.get('us_inflation', list(datasets.values())[0])
-            
+            forecast_data = datasets.get("us_inflation", list(datasets.values())[0])
+
             forecaster = ChronosBehavioralForecaster(
                 model_name="amazon/chronos-bolt-small", device="cpu"
             )
-            
+
             benchmark = BenchmarkRunner(forecaster)
             results = benchmark.run_benchmark(
-                data=forecast_data, 
-                test_split=0.3, 
-                prediction_length=3, 
-                window_size=8
+                data=forecast_data, test_split=0.3, prediction_length=3, window_size=8
             )
-            
+
             benchmark.print_results()
-            
+
             print("\n✓ IMF Data Forecasting Demo Completed Successfully!")
             return results
-            
+
         except Exception as e:
             print(f"   ✗ Error running forecasting: {e}")
-    
+
     return None
 
 
 if __name__ == "__main__":
     # Run the IMF data demo
     results = run_imf_data_demo()
+

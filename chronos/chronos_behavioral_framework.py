@@ -189,7 +189,12 @@ class ChronosBehavioralForecaster:
         naive_mae = np.mean(np.abs(true_values[1:] - naive_forecast))
         mase = mae / (naive_mae + 1e-8)
 
-        return {"mse": mse, "mae": mae, "mape": mape, "mase": mase}
+        return {
+            "mse": float(mse),
+            "mae": float(mae),
+            "mape": float(mape),
+            "mase": float(mase),
+        }
 
 
 class BenchmarkRunner:
@@ -203,7 +208,7 @@ class BenchmarkRunner:
 
     def run_benchmark(
         self,
-        data: List[float],
+        data: List[float] | None,
         test_split: float = 0.2,
         prediction_length: int = 5,
         window_size: int = 10,
@@ -214,6 +219,8 @@ class BenchmarkRunner:
         print("Starting benchmark evaluation...")
 
         # Split data
+        if data is None or len(data) < (window_size + prediction_length + 10):
+            raise ValueError("Insufficient data for benchmarking")
         split_point = int(len(data) * (1 - test_split))
         train_data = data[:split_point]
         test_data = data[split_point:]

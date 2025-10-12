@@ -5,7 +5,7 @@ Supports: Sentiment scores, User clickstreams, Engagement metrics, IMF macroecon
 
 import pandas as pd
 import numpy as np
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any
 import json
 from imf_data_loader import IMFDataLoader
 
@@ -14,11 +14,11 @@ class BehavioralDataLoader:
     """
     Load and preprocess various types of behavioral data including macroeconomic indicators
     """
-    
+
     def __init__(self):
         """Initialize data loader with IMF data capability"""
         self.imf_loader = None
-    
+
     def _get_imf_loader(self) -> IMFDataLoader:
         """Lazy initialization of IMF loader"""
         if self.imf_loader is None:
@@ -26,7 +26,9 @@ class BehavioralDataLoader:
         return self.imf_loader
 
     @staticmethod
-    def load_sentiment_data(file_path: str = None, format: str = "csv") -> List[float]:
+    def load_sentiment_data(
+        file_path: str | None = None, format: str = "csv"
+    ) -> List[float] | None:
         """
         Load sentiment score data from various formats
         """
@@ -60,7 +62,7 @@ class BehavioralDataLoader:
             raise ValueError("Could not extract sentiment scores from JSON data")
 
     @staticmethod
-    def load_clickstream_data(file_path: str = None) -> List[float]:
+    def load_clickstream_data(file_path: str | None = None) -> List[float]:
         """
         Convert clickstream data to numeric sequence
         """
@@ -92,7 +94,7 @@ class BehavioralDataLoader:
         raise ValueError("No 'event_type' column found in clickstream data")
 
     @staticmethod
-    def load_engagement_data(file_path: str = None) -> List[float]:
+    def load_engagement_data(file_path: str | None = None) -> List[float]:
         """
         Load user engagement metrics (likes, shares, comments, etc.)
         """
@@ -127,7 +129,7 @@ class BehavioralDataLoader:
         return engagement_scores
 
     @staticmethod
-    def load_dialogue_sentiment(file_path: str = None) -> List[float]:
+    def load_dialogue_sentiment(file_path: str | None = None) -> List[float]:
         """
         Load dialogue sentiment progression data
         """
@@ -300,7 +302,7 @@ class DatasetBenchmarker:
 
     def run_multiple_datasets(
         self,
-        datasets: Dict[str, List[float]],
+        datasets: Dict[str, List[float] | None],
         test_split: float = 0.2,
         prediction_length: int = 5,
         window_size: int = 10,
@@ -394,9 +396,10 @@ def run_comprehensive_benchmark():
 
     print("Loaded datasets:")
     for name, data in datasets.items():
-        print(
-            f"  {name}: {len(data)} samples, range: [{min(data):.3f}, {max(data):.3f}]"
-        )
+        if data is not None:
+            print(
+                f"  {name}: {len(data)} samples, range: [{min(data):.3f}, {max(data):.3f}]"
+            )
 
     # Initialize forecaster
     forecaster = ChronosBehavioralForecaster(
