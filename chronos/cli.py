@@ -3,12 +3,18 @@ Command Line Interface for Chronos Forecasting Framework
 Provides easy access to all framework features through command line
 """
 
+import traceback
+
 import argparse
 import json
 import os
 import sys
 from typing import Dict, List, Any, Optional
 import warnings
+
+import pandas as pd
+from sklearn.metrics import mean_squared_error, mean_absolute_error
+import numpy as np
 
 # Import framework modules
 from enhanced_data_preparation import EnhancedBehavioralDataLoader
@@ -18,6 +24,8 @@ from baseline_models import BaselineComparison
 from visualization import ForecastVisualizer, create_forecast_report
 from chronos_behavioral_framework import ChronosBehavioralForecaster
 from comprehensive_demo import ComprehensiveForecaster
+from comprehensive_demo import main as run_comprehensive_demo
+
 
 warnings.filterwarnings("ignore")
 
@@ -61,8 +69,6 @@ class ChronosCLI:
             if not args.file_path:
                 raise ValueError("CSV file path required for CSV data type")
 
-            import pandas as pd
-
             df = pd.read_csv(args.file_path)
 
             # Try to find a suitable column
@@ -79,7 +85,6 @@ class ChronosCLI:
 
         elif args.data_type == "synthetic":
             # Generate synthetic data
-            import numpy as np
 
             np.random.seed(42)
             n_samples = args.n_samples or 50
@@ -159,8 +164,6 @@ class ChronosCLI:
         predictions = forecast_result["mean"][0].numpy()
 
         # Calculate metrics
-        from sklearn.metrics import mean_squared_error, mean_absolute_error
-        import numpy as np
 
         mse = mean_squared_error(test_data, predictions)
         mae = mean_absolute_error(test_data, predictions)
@@ -286,9 +289,6 @@ class ChronosCLI:
                     predictions = forecast_result["mean"][0].numpy()
 
                     # Calculate metrics
-                    from sklearn.metrics import mean_squared_error, mean_absolute_error
-                    import numpy as np
-
                     mse = mean_squared_error(test_data, predictions)
                     mae = mean_absolute_error(test_data, predictions)
 
@@ -444,8 +444,7 @@ class ChronosCLI:
         """Run demo command"""
         print("Running Chronos Forecasting Framework Demo...")
 
-        # Import and run comprehensive demo
-        from comprehensive_demo import main as run_comprehensive_demo
+        # Run comprehensive demo
 
         try:
             results = run_comprehensive_demo()
@@ -665,11 +664,8 @@ def main():
     except Exception as e:
         print(f"Error: {e}")
         if "--debug" in sys.argv:
-            import traceback
-
             traceback.print_exc()
 
 
 if __name__ == "__main__":
     main()
-

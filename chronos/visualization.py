@@ -34,7 +34,7 @@ class ForecastVisualizer:
     Comprehensive visualization for forecasting results
     """
 
-    def __init__(self, figsize: Tuple[int, int] = (12, 8), style: str = "seaborn"):
+    def __init__(self, figsize: Tuple[int, int] = (12, 8), style: str = "seaborn-v0_8"):
         """
         Initialize visualizer
 

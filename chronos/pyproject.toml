@@ -15,4 +15,5 @@ dependencies = [
     "scipy>=1.11.0",
     "plotly>=5.17.0",
     "statsmodels>=0.14.0",
+    "sdmx1>=2.23.1",
 ]

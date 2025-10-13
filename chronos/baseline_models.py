@@ -344,7 +344,7 @@ class ARIMAForecaster(BaselineForecaster):
                                         best_aic = fitted.aic
                                         best_order = (p, d, q)
                                 except Exception as e:
-                                    print(f"ARIMA order {(p,d,q)} failed: {e}")
+                                    print(f"ARIMA order {(p, d, q)} failed: {e}")
                                     continue
 
                     self.order = best_order
@@ -642,4 +642,3 @@ def test_baseline_models():
 if __name__ == "__main__":
     # Run tests
     comparison, train_data, test_data = test_baseline_models()
-

@@ -30,7 +30,7 @@ class ComprehensiveForecaster:
         model_name: str = "amazon/chronos-bolt-small",
         device: str = "cpu",
         use_advanced_tokenizer: bool = True,
-        tokenizer_config: Dict = None,
+        tokenizer_config: None | Dict = None,
     ):
         """
         Initialize comprehensive forecaster
@@ -565,4 +565,3 @@ if __name__ == "__main__":
 
     # Run comprehensive demo
     results = main()
-
