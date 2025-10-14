@@ -48,7 +48,7 @@ class EnhancedBehavioralDataLoader:
         if countries is None:
             countries = ["US"]  # Default to US data
 
-        imf_loader = self._get_imf_loader()
+        imf_loader: IMFDataLoader = self._get_imf_loader()
         inflation_data = imf_loader.get_inflation_data(countries, start_year, end_year)
 
         # Return data for specified country or first available
