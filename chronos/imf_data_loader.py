@@ -302,6 +302,104 @@ class IMFDataLoader:
                 )
         return inflation_data
 
+    def get_gdp_growth_data(
+        self,
+        countries: Optional[List[str]] = None,
+        start_year: int = 2000,
+        end_year: int = 2023,
+        use_cache: bool = True,
+    ) -> Dict[str, List[float]]:
+        if countries is None:
+            countries = ["USA", "GBR", "DEU", "JPN", "CHN"]
+
+        gdp_data: Dict[str, List[float]] = {}
+        for country in countries:
+            df = self.fetch_weo_data(
+                country,
+                self.INDICATORS["gdp_growth"],
+                start_year,
+                end_year,
+                use_cache=use_cache,
+            )
+            if df is not None and not df.empty:
+                annual_data = (
+                    df.groupby("year")["value"]
+                    .mean()
+                    .reindex(range(start_year, end_year + 1))
+                    .tolist()
+                )
+                if any(pd.isna(x) for x in annual_data):
+                    print(
+                        f"Using synthetic GDP growth data for {country} due to missing points"
+                    )
+                    gdp_data[country] = self._generate_synthetic_gdp_growth(
+                        end_year - start_year + 1, country
+                    )
+                else:
+                    gdp_data[country] = [float(x) for x in annual_data]
+            else:
+                print(f"Using synthetic GDP growth data for {country}")
+                gdp_data[country] = self._generate_synthetic_gdp_growth(
+                    end_year - start_year + 1, country
+                )
+        return gdp_data
+
+    # ----------------------------
+    # Meta helpers
+    # ----------------------------
+    def get_available_indicators(self) -> Dict[str, str]:
+        return self.INDICATORS.copy()
+
+    def get_available_countries(self) -> Dict[str, str]:
+        return self.IMF_COUNTRY_MAP.copy()
+
+    def create_multivariate_dataset(
+        self,
+        country: str,
+        indicators: List[str],
+        start_year: int = 2000,
+        end_year: int = 2023,
+        use_cache: bool = True,
+    ) -> pd.DataFrame:
+        all_data = {}
+        years_index = list(range(start_year, end_year + 1))
+        for indicator_name in indicators:
+            if indicator_name not in self.INDICATORS:
+                print(f"Warning: Unknown indicator '{indicator_name}', skipping")
+                continue
+            indicator_code = self.INDICATORS[indicator_name]
+            df = self.fetch_weo_data(
+                country, indicator_code, start_year, end_year, use_cache=use_cache
+            )
+            if df is not None and not df.empty:
+                annual_data = df.groupby("year")["value"].mean().reindex(years_index)
+                all_data[indicator_name] = annual_data.values
+            else:
+                print(
+                    f"Warning: No data available for {country} - {indicator_name}, using synthetic"
+                )
+                if indicator_name == "inflation":
+                    vals = self._generate_synthetic_inflation(
+                        end_year - start_year + 1, country
+                    )
+                elif indicator_name == "gdp_growth":
+                    vals = self._generate_synthetic_gdp_growth(
+                        end_year - start_year + 1, country
+                    )
+                else:
+                    vals = [np.nan] * (end_year - start_year + 1)
+                all_data[indicator_name] = vals
+
+        if not all_data:
+            return pd.DataFrame()
+
+        combined_df = pd.DataFrame(all_data, index=years_index)
+        combined_df.index.name = "year"
+        # fill forward/backwards
+        combined_df = combined_df.ffill().bfill()
+        combined_df = combined_df.reset_index()
+        return combined_df
+
 
 # Example usage:
 if __name__ == "__main__":

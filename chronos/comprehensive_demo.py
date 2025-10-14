@@ -8,6 +8,7 @@ import pandas as pd
 from typing import Dict, List, Any
 import warnings
 import os
+import matplotlib.pyplot as plt
 
 # Import modules
 from enhanced_data_preparation import EnhancedBehavioralDataLoader
@@ -560,8 +561,5 @@ def main():
 
 
 if __name__ == "__main__":
-    # Import matplotlib for visualization
-    import matplotlib.pyplot as plt
-
     # Run comprehensive demo
     results = main()

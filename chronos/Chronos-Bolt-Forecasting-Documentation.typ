@@ -99,7 +99,7 @@
 // Title page
 #align(center)[
   #v(2cm)
-  #text(text(document-title),size: 2.5em, weight: "bold")
+  #text(text(document-title), size: 2.5em, weight: "bold")
 
   #v(1cm)
   #text(size: 1.5em, style: "italic")[
@@ -1152,6 +1152,11 @@ Period,Forecast,Lower_80,Upper_80,Lower_95,Upper_95
 - Embedded charts for visualization
 - Summary dashboard with key metrics
 
+= Prototype Outputs
+Forecast Reports on international GDP data
+#image("./results/gdp/forecast_results.png")
+#image("./results/gdp/residual_analysis.png")
+
 = Conclusion
 
 == Summary of Achievements
@@ -1180,22 +1185,22 @@ The modular architecture, comprehensive evaluation framework, and production-rea
 
 = References
 
-1. Ansari, A. F., et al. (2024). "Chronos: Learning the Language of Time Series." *arXiv preprint arXiv:2403.07815*. Available: https://arxiv.org/abs/2403.07815
+- Ansari, A. F., et al. (2024). "Chronos: Learning the Language of Time Series." *arXiv preprint arXiv:2403.07815*. Available: https://arxiv.org/abs/2403.07815
 
-2. Amazon Science. (2024). "Chronos: Pretrained Models for Probabilistic Time Series Forecasting." *GitHub Repository*. Available: https://github.com/amazon-science/chronos-forecasting
+- Amazon Science. (2024). "Chronos: Pretrained Models for Probabilistic Time Series Forecasting." *GitHub Repository*. Available: https://github.com/amazon-science/chronos-forecasting
 
-3. International Monetary Fund. (2024). "World Economic Outlook Database." *IMF Data Portal*. Available: https://data.imf.org/en
+- International Monetary Fund. (2024). "World Economic Outlook Database." *IMF Data Portal*. Available: https://data.imf.org/en
 
-4. Liu, S., et al. (2024). "Mending the Crystal Ball: Enhanced Inflation Forecasts with Machine Learning." *IMF Working Paper WP/24/206*. Available: https://www.imf.org/-/media/Files/Publications/WP/2024/English/wpiea2024206-print-pdf.ashx
+// 4. Liu, S., et al. (2024). "Mending the Crystal Ball: Enhanced Inflation Forecasts with Machine Learning." *IMF Working Paper WP/24/206*. Available: https://www.imf.org/-/media/Files/Publications/WP/2024/English/wpiea2024206-print-pdf.ashx
 
-5. Li, Z., et al. (2024). "FinCast: A Foundation Model for Financial Time-Series Forecasting." *CIKM 2025*. Available: https://arxiv.org/html/2508.19609v1
+// . Li, Z., et al. (2024). "FinCast: A Foundation Model for Financial Time-Series Forecasting." *CIKM 2025*. Available: https://arxiv.org/html/2508.19609v1
 
-6. Vaswani, A., et al. (2017). "Attention Is All You Need." *Advances in Neural Information Processing Systems*, 30.
+// 6. Vaswani, A., et al. (2017). "Attention Is All You Need." *Advances in Neural Information Processing Systems*, 30.
 
-7. Hyndman, R. J., & Athanasopoulos, G. (2021). "Forecasting: Principles and Practice." *3rd Edition*, OTexts.
+- Hyndman, R. J., & Athanasopoulos, G. (2021). "Forecasting: Principles and Practice." *3rd Edition*, OTexts.
 
-8. Box, G. E. P., Jenkins, G. M., Reinsel, G. C., & Ljung, G. M. (2015). "Time Series Analysis: Forecasting and Control." *5th Edition*, Wiley.
+- Box, G. E. P., Jenkins, G. M., Reinsel, G. C., & Ljung, G. M. (2015). "Time Series Analysis: Forecasting and Control." *5th Edition*, Wiley.
 
-9. Diebold, F. X., & Mariano, R. S. (1995). "Comparing Predictive Accuracy." *Journal of Business & Economic Statistics*, 13(3), 253-263.
+- Diebold, F. X., & Mariano, R. S. (1995). "Comparing Predictive Accuracy." *Journal of Business & Economic Statistics*, 13(3), 253-263.
 
-10. Hansen, P. R., Lunde, A., & Nason, J. M. (2011). "The Model Confidence Set." *Econometrica*, 79(2), 453-497.
+// - Hansen, P. R., Lunde, A., & Nason, J. M. (2011). "The Model Confidence Set." *Econometrica*, 79(2), 453-497.

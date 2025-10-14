@@ -1,0 +1,37 @@
+
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>Chronos Basic Forecast Report</title>
+        <style>
+            body { font-family: Arial, sans-serif; margin: 40px; }
+            h1 { color: #333; }
+            h2 { color: #666; }
+            .metric { background-color: #f0f0f0; padding: 10px; margin: 10px 0; border-radius: 5px; }
+            .metric-value { font-weight: bold; color: #2c3e50; }
+            img { max-width: 100%; height: auto; margin: 20px 0; }
+        </style>
+    </head>
+    <body>
+        <h1>Chronos Basic Forecast Report</h1>
+
+        <h2>Performance Metrics</h2>
+        <div class="metric">Mean Squared Error (MSE): <span class="metric-value">71104.391890</span></div>
+        <div class="metric">Root Mean Squared Error (RMSE): <span class="metric-value">266.654068</span></div>
+        <div class="metric">Mean Absolute Error (MAE): <span class="metric-value">266.523454</span></div>
+        <div class="metric">Mean Absolute Percentage Error (MAPE): <span class="metric-value">5202.95%</span></div>
+
+        <h2>Forecast Results</h2>
+        <img src="forecast_results.png" alt="Forecast Results">
+
+        <h2>Residual Analysis</h2>
+        <img src="residual_analysis.png" alt="Residual Analysis">
+
+        <h2>Summary</h2>
+        <p>This report shows the forecasting performance of the Chronos Basic model.</p>
+        <p>Total predictions: 3</p>
+        <p>Training data points: 11</p>
+
+    </body>
+    </html>
+    

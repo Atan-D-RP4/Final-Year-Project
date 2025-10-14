@@ -363,7 +363,8 @@ class AdvancedTokenizer:
 
         Returns:
             Tokenized tensor ready for Chronos
-        """  # Convert input to numpy array
+        """
+        # Convert input to numpy array
         if isinstance(data, dict):
             # Multivariate case
             data_arrays = []
