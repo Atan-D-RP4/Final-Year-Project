@@ -5,7 +5,7 @@ Supports: Sentiment scores, User clickstreams, Engagement metrics, IMF macroecon
 
 import pandas as pd
 import numpy as np
-from typing import List, Dict, Any, Optional
+from typing import List, Dict
 import json
 from imf_data_loader import IMFDataLoader
 
@@ -534,4 +534,3 @@ def run_imf_data_demo():
 if __name__ == "__main__":
     # Run the IMF data demo
     results = run_imf_data_demo()
-

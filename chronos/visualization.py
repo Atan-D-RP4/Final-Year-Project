@@ -4,7 +4,6 @@ Provides comprehensive plotting capabilities for time series analysis and foreca
 """
 
 import numpy as np
-import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 from typing import List, Dict, Any, Optional, Tuple, Union
@@ -843,4 +842,3 @@ def test_visualization():
 if __name__ == "__main__":
     # Run tests
     visualizer = test_visualization()
-

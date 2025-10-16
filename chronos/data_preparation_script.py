@@ -17,7 +17,7 @@ class BehavioralDataLoader:
 
     def __init__(self):
         """Initialize data loader with IMF data capability"""
-        self.imf_loader = None
+        self.imf_loader: IMFDataLoader | None = None
 
     def _get_imf_loader(self) -> IMFDataLoader:
         """Lazy initialization of IMF loader"""

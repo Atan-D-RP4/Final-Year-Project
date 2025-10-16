@@ -4,12 +4,10 @@ Implements time-series specific validation methods and comprehensive evaluation 
 """
 
 import numpy as np
-import pandas as pd
-from typing import List, Dict, Any, Tuple, Optional, Callable
+from typing import List, Dict, Any, Tuple
 from sklearn.metrics import mean_squared_error, mean_absolute_error
 import matplotlib.pyplot as plt
 import warnings
-from datetime import datetime, timedelta
 
 warnings.filterwarnings("ignore")
 
@@ -230,7 +228,7 @@ class ForecastingMetrics:
     ) -> float:
         """Prediction Interval Coverage Probability"""
         coverage = np.mean((y_true >= lower_bound) & (y_true <= upper_bound))
-        return coverage * 100
+        return float(coverage * 100)
 
     @staticmethod
     def theil_u_statistic(y_true: np.ndarray, y_pred: np.ndarray) -> float:
@@ -430,11 +428,11 @@ class BacktestingFramework:
 
             if values:
                 stats[metric] = {
-                    "mean": np.mean(values),
-                    "std": np.std(values),
-                    "min": np.min(values),
-                    "max": np.max(values),
-                    "median": np.median(values),
+                    "mean": float(np.mean(values)),
+                    "std": float(np.std(values)),
+                    "min": float(np.min(values)),
+                    "max": float(np.max(values)),
+                    "median": float(np.median(values)),
                 }
             else:
                 stats[metric] = {
@@ -457,18 +455,18 @@ class BacktestingFramework:
         print("TIME SERIES FORECASTING BACKTEST RESULTS")
         print("=" * 70)
 
-        print(f"Backtest Configuration:")
+        print("Backtest Configuration:")
         print(f"  CV Strategy: {self.results['cv_strategy']}")
         print(f"  Number of Splits: {self.results['n_splits']}")
         print(f"  Total Predictions: {self.results['total_predictions']}")
         print(f"  Prediction Length: {self.prediction_length}")
 
-        print(f"Overall Performance:")
+        print("Overall Performance:")
         overall = self.results["overall_metrics"]
         for metric, value in overall.items():
             print(f"  {metric.upper()}: {value:.4f}")
 
-        print(f"Cross-Validation Statistics:")
+        print("Cross-Validation Statistics:")
         stats = self.results["metric_statistics"]
         print(f"{'Metric':<20} {'Mean':<10} {'Std':<10} {'Min':<10} {'Max':<10}")
         print("-" * 70)
@@ -639,4 +637,3 @@ def test_cross_validation():
 if __name__ == "__main__":
     # Run tests
     test_data = test_cross_validation()
-

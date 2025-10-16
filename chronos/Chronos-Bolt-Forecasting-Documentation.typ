@@ -1154,8 +1154,8 @@ Period,Forecast,Lower_80,Upper_80,Lower_95,Upper_95
 
 = Prototype Outputs
 Forecast Reports on international GDP data
-#image("./results/gdp/forecast_results.png")
-#image("./results/gdp/residual_analysis.png")
+// #image("./results/gdp/forecast_results.png")
+// #image("./results/gdp/residual_analysis.png")
 
 = Conclusion
 

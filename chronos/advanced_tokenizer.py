@@ -7,11 +7,11 @@ import numpy as np
 import pandas as pd
 import torch
 from sklearn.preprocessing import StandardScaler, RobustScaler, MinMaxScaler
-from sklearn.feature_selection import SelectKBest, f_regression, mutual_info_regression
+from sklearn.feature_selection import SelectKBest, f_regression
 from scipy import stats
 from scipy.signal import detrend
 from statsmodels.tsa.seasonal import seasonal_decompose
-from typing import List, Dict, Any, Optional, Tuple, Union
+from typing import List, Dict, Optional, Union
 import warnings
 
 warnings.filterwarnings("ignore")
@@ -50,8 +50,10 @@ class AdvancedTokenizer:
         self.economic_features = economic_features
 
         # Initialize scalers and selectors
-        self.scaler = self._get_scaler()
-        self.feature_selector = None
+        self.scaler: StandardScaler | RobustScaler | MinMaxScaler | None = (
+            self._get_scaler()
+        )
+        self.feature_selector: Optional[SelectKBest] = None
         self.is_fitted = False
 
         # Store feature names for interpretability
@@ -675,4 +677,3 @@ def test_advanced_tokenizer():
 if __name__ == "__main__":
     # Run tests
     tokenizer, tokenizer_mv = test_advanced_tokenizer()
-

@@ -4,19 +4,17 @@ Demonstrates all major features including IMF data, advanced preprocessing, cros
 """
 
 import numpy as np
-import pandas as pd
-from typing import Dict, List, Any
+from typing import Dict, List, Any, Optional
 import warnings
-import os
 import matplotlib.pyplot as plt
 
 # Import modules
 from enhanced_data_preparation import EnhancedBehavioralDataLoader
 from advanced_tokenizer import AdvancedTokenizer
-from cross_validation import BacktestingFramework, TimeSeriesCrossValidator
+from cross_validation import BacktestingFramework
 from baseline_models import BaselineComparison
 from visualization import ForecastVisualizer, create_forecast_report
-from chronos_behavioral_framework import ChronosBehavioralForecaster, BenchmarkRunner
+from chronos_behavioral_framework import ChronosBehavioralForecaster
 
 warnings.filterwarnings("ignore")
 
@@ -31,7 +29,7 @@ class ComprehensiveForecaster:
         model_name: str = "amazon/chronos-bolt-small",
         device: str = "cpu",
         use_advanced_tokenizer: bool = True,
-        tokenizer_config: None | Dict = None,
+        tokenizer_config: Optional[Dict] = None,
     ):
         """
         Initialize comprehensive forecaster
@@ -45,6 +43,7 @@ class ComprehensiveForecaster:
         self.model_name = model_name
         self.device = device
         self.use_advanced_tokenizer = use_advanced_tokenizer
+        self.advanced_tokenizer: Optional[AdvancedTokenizer]
 
         # Initialize base forecaster
         self.base_forecaster = ChronosBehavioralForecaster(model_name, device)

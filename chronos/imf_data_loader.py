@@ -199,7 +199,7 @@ class IMFDataLoader:
         use_cache: bool = True,
     ) -> pd.DataFrame:
         """Currently no IMF datamapper endpoint for IFS, so fallback."""
-        print(f"IFS data not available via JSON API, generating synthetic data.")
+        print("IFS data not available via JSON API, generating synthetic data.")
         return self._generate_fallback_data(country, indicator, start_year, end_year)
 
     # ------------------------

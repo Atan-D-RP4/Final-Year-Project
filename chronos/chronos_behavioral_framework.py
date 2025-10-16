@@ -12,6 +12,7 @@ from scipy import stats
 import matplotlib.pyplot as plt
 from typing import List, Tuple, Dict, Any
 import warnings
+from typing import Optional
 
 warnings.filterwarnings("ignore")
 
@@ -101,8 +102,8 @@ class ChronosBehavioralForecaster:
     ):
         self.model_name = model_name
         self.device = device
-        self.pipeline = None
-        self.tokenizer = None
+        self.pipeline: Optional[BaseChronosPipeline] = None
+        self.tokenizer: Optional[BehavioralDataTokenizer] = None
         self.load_model()
 
     def load_model(self):
@@ -131,6 +132,9 @@ class ChronosBehavioralForecaster:
         """
         Perform zero-shot forecasting on behavioral data
         """
+        if self.pipeline is None:
+            raise ValueError("Model not loaded")
+
         print(f"Performing zero-shot forecast for {prediction_length} steps...")
 
         # Get quantile predictions

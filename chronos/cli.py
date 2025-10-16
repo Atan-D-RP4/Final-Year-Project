@@ -9,21 +9,18 @@ import argparse
 import json
 import os
 import sys
-from typing import Dict, List, Any, Optional
+from typing import List
 import warnings
 
 import pandas as pd
-import matplotlib.pyplot as plt
 from sklearn.metrics import mean_squared_error, mean_absolute_error
 import numpy as np
 
 # Import framework modules
 from enhanced_data_preparation import EnhancedBehavioralDataLoader
-from advanced_tokenizer import AdvancedTokenizer
 from cross_validation import BacktestingFramework
 from baseline_models import BaselineComparison
 from visualization import ForecastVisualizer, create_forecast_report
-from chronos_behavioral_framework import ChronosBehavioralForecaster
 from comprehensive_demo import ComprehensiveForecaster
 from comprehensive_demo import main as run_comprehensive_demo
 
@@ -70,7 +67,7 @@ class ChronosCLI:
             if not args.file_path:
                 raise ValueError("CSV file path required for CSV data type")
 
-            df = pd.read_csv(args.file_path)
+            df: pd.DataFrame = pd.read_csv(args.file_path)
 
             # Try to find a suitable column
             numeric_cols = df.select_dtypes(include=["float64", "int64"]).columns
@@ -456,18 +453,22 @@ class ChronosCLI:
 
                 # Save demo results summary
                 summary = {
-                    "datasets_loaded": len(results.get("datasets", {})),
-                    "tokenizer_configs_tested": len(
-                        results.get("tokenizer_results", {})
-                    ),
-                    "models_compared": len(
-                        results.get("forecast_results", {}).get("chronos_results", {})
-                    )
-                    + len(
-                        results.get("forecast_results", {}).get("baseline_results", {})
-                    ),
-                    "cv_completed": results.get("cv_results") is not None,
+                    "datasets_loaded": 0,
+                    "tokenizer_configs_tested": 0,
+                    "models_compared": 0,
+                    "cv_completed": False,
                 }
+                if results:
+                    summary["datasets_loaded"] = len(results.get("datasets", {}))
+                    summary["tokenizer_configs_tested"] = len(
+                        results.get("tokenizer_results", {})
+                    )
+                    forecast_results = results.get("forecast_results")
+                    if forecast_results:
+                        summary["models_compared"] = len(
+                            forecast_results.get("chronos_results", {})
+                        ) + len(forecast_results.get("baseline_results", {}))
+                    summary["cv_completed"] = results.get("cv_results") is not None
 
                 with open(os.path.join(args.output_dir, "demo_summary.json"), "w") as f:
                     json.dump(summary, f, indent=2)

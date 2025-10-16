@@ -182,7 +182,7 @@ def main():
     if run_demo:
         results = run_basic_demo()
         if results:
-            print(f"\nDemo Results Summary:")
+            print("\nDemo Results Summary:")
             print(f"F1 Score: {results['classification_metrics']['f1_score']:.4f}")
             print(f"MASE: {results['regression_metrics']['mase']:.4f}")
 

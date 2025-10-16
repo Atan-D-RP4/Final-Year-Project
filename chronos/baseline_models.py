@@ -3,19 +3,20 @@ Baseline Models for Time Series Forecasting Comparison
 Implements ARIMA, Exponential Smoothing, Naive forecasts, and other classical methods
 """
 
+import warnings
+from typing import Any, Dict, List, Optional, Tuple
+
 import numpy as np
 import pandas as pd
-from typing import List, Dict, Optional, Tuple
-import warnings
 from sklearn.linear_model import LinearRegression
-from sklearn.metrics import mean_squared_error, mean_absolute_error
+from sklearn.metrics import mean_absolute_error, mean_squared_error
 
 # Try to import statsmodels for ARIMA and exponential smoothing
 try:
     from statsmodels.tsa.arima.model import ARIMA
     from statsmodels.tsa.holtwinters import ExponentialSmoothing
-    from statsmodels.tsa.seasonal import seasonal_decompose
-    from statsmodels.tsa.stattools import adfuller
+    # from statsmodels.tsa.seasonal import seasonal_decompose
+    # from statsmodels.tsa.stattools import adfuller
 
     STATSMODELS_AVAILABLE = True
 except ImportError:
@@ -35,7 +36,6 @@ class BaselineForecaster:
     def __init__(self, name: str):
         self.name = name
         self.is_fitted = False
-        self.model = None
 
     def fit(self, data: List[float]) -> "BaselineForecaster":
         """Fit the model to training data"""
@@ -58,7 +58,7 @@ class NaiveForecaster(BaselineForecaster):
 
     def __init__(self):
         super().__init__("Naive")
-        self.last_value = None
+        self.last_value: Optional[float] = None
 
     def fit(self, data: List[float]) -> "NaiveForecaster":
         """Fit naive model (just store last value)"""
@@ -120,8 +120,8 @@ class DriftForecaster(BaselineForecaster):
 
     def __init__(self):
         super().__init__("Drift")
-        self.slope = None
-        self.last_value = None
+        self.slope: Optional[float] = None
+        self.last_value: Optional[float] = None
 
     def fit(self, data: List[float]) -> "DriftForecaster":
         """Fit drift model (calculate linear trend)"""
@@ -154,7 +154,7 @@ class MovingAverageForecaster(BaselineForecaster):
     def __init__(self, window_size: int = 5):
         super().__init__(f"Moving Average ({window_size})")
         self.window_size = window_size
-        self.recent_values = None
+        self.recent_values: Optional[List[float]] = None
 
     def fit(self, data: List[float]) -> "MovingAverageForecaster":
         """Fit moving average model"""
@@ -176,7 +176,7 @@ class MovingAverageForecaster(BaselineForecaster):
         for _ in range(steps):
             # Predict as average of recent values
             prediction = np.mean(current_values)
-            predictions.append(prediction)
+            predictions.append(float(prediction))
 
             # Update window (add prediction, remove oldest)
             current_values = current_values[1:] + [prediction]
@@ -192,7 +192,7 @@ class LinearTrendForecaster(BaselineForecaster):
     def __init__(self):
         super().__init__("Linear Trend")
         self.model = LinearRegression()
-        self.n_obs = None
+        self.n_obs: Optional[int] = None
 
     def fit(self, data: List[float]) -> "LinearTrendForecaster":
         """Fit linear trend model"""
@@ -242,7 +242,8 @@ class ExponentialSmoothingForecaster(BaselineForecaster):
         self.trend = trend
         self.seasonal = seasonal
         self.seasonal_periods = seasonal_periods
-        self.fitted_model = None
+        self.fitted_model: Optional[Any] = None
+        self.level: Optional[float] = None
 
     def fit(self, data: List[float]) -> "ExponentialSmoothingForecaster":
         """Fit exponential smoothing model"""
@@ -315,8 +316,10 @@ class ARIMAForecaster(BaselineForecaster):
         super().__init__(f"ARIMA{order}")
         self.order = order
         self.auto_order = auto_order
-        self.fitted_model = None
-        self.data = None
+        self.fitted_model: Optional[Any] = None
+        self.data: Optional[List[float]] = None
+        self.ar_model: Optional[LinearRegression] = None
+        self.last_value: Optional[float] = None
 
     def fit(self, data: List[float]) -> "ARIMAForecaster":
         """Fit ARIMA model"""
@@ -340,7 +343,7 @@ class ARIMAForecaster(BaselineForecaster):
                                 try:
                                     model = ARIMA(ts, order=(p, d, q))
                                     fitted = model.fit()
-                                    if fitted.aic < best_aic:
+                                    if hasattr(fitted, "aic") and fitted.aic < best_aic:
                                         best_aic = fitted.aic
                                         best_order = (p, d, q)
                                 except Exception as e:
