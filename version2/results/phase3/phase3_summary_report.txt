@@ -1,0 +1,65 @@
+Phase 3 Experiments Summary Report
+==================================================
+
+Summary Statistics:
+--------------------
+total_models_tested: 7
+baseline_models: 6
+chronos_models: 1
+tokenization_strategies: 4
+
+Best Models by Metric:
+-------------------------
+mae: baseline_naive_last (0.2162)
+rmse: baseline_naive_last (0.2312)
+mase: baseline_naive_last (8.5148)
+smape: baseline_naive_last (13.1602)
+directional_accuracy: baseline_naive_last (43.4783)
+
+Detailed Metric Comparison:
+------------------------------
+
+MAE:
+  baseline_naive_last: 0.2162
+  baseline_arima: 0.2165
+  baseline_naive_mean: 0.4621
+  baseline_lstm: 2.1596
+  baseline_var: 2.7658
+  baseline_linear: 2.8518
+  chronos_chronos_small: 2.8642
+
+RMSE:
+  baseline_naive_last: 0.2312
+  baseline_arima: 0.2314
+  baseline_naive_mean: 0.4693
+  baseline_lstm: 2.1622
+  baseline_var: 2.7680
+  baseline_linear: 2.8533
+  chronos_chronos_small: 2.8652
+
+MASE:
+  baseline_naive_last: 8.5148
+  baseline_arima: 8.5233
+  baseline_naive_mean: 18.1943
+  baseline_lstm: 85.0320
+  baseline_var: 108.9006
+  baseline_linear: 112.2880
+  chronos_chronos_small: 112.7759
+
+SMAPE:
+  baseline_naive_last: 13.1602
+  baseline_arima: 13.1745
+  baseline_naive_mean: 23.5876
+  baseline_lstm: 76.7330
+  baseline_var: 88.7073
+  baseline_linear: 90.2302
+  chronos_chronos_small: 90.4506
+
+DIRECTIONAL_ACCURACY:
+  baseline_var: 21.7391
+  baseline_linear: 26.0870
+  chronos_chronos_small: 30.4348
+  baseline_arima: 34.7826
+  baseline_lstm: 34.7826
+  baseline_naive_last: 43.4783
+  baseline_naive_mean: 43.4783
