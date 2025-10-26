@@ -237,9 +237,17 @@ class Phase3Experiments:
                     true_values = true_values[:min_len]
                     predictions = predictions[:min_len]
 
+                # Quantiles placeholder
+                quantile_predictions = None
+                quantile_levels = np.linspace(0.1, 0.9, 9)
+
                 # Calculate metrics
                 metrics = calculate_all_metrics(
-                    true_values, predictions, train_data[target_col].dropna().values
+                    y_true=true_values,
+                    y_pred=predictions,
+                    y_train=train_data[target_col].dropna().values,
+                    y_pred_quantiles=quantile_predictions,
+                    quantile_levels=quantile_levels,
                 )
 
                 results[model_name] = {
@@ -400,9 +408,17 @@ class Phase3Experiments:
                     true_values = true_values[:min_len]
                     predictions = predictions[:min_len]
 
+                # Quantiles placeholder
+                quantile_predictions = None
+                quantile_levels = np.linspace(0.1, 0.9, 9)
+
                 # Calculate metrics
                 metrics = calculate_all_metrics(
-                    true_values, predictions, train_data[target_col].dropna().values
+                    y_true=true_values,
+                    y_pred=predictions,
+                    y_train=train_data[target_col].dropna().values,
+                    y_pred_quantiles=quantile_predictions,
+                    quantile_levels=quantile_levels,
                 )
 
                 results[config_name] = {

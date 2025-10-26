@@ -92,75 +92,83 @@ ______________________________________________________________________
 
 **Source:** Yahoo Finance (via `yfinance`)
 
-````python import yfinance as yf tickers = ["SPY","AAPL","MSFT"] df =
-yf.download(tickers, start="2010-01-01", end="2025-01-01", interval="1d",
-auto_adjust=True) # df has MultiIndex columns when multiple tickers ```
+```python
+import yfinance as yf
+tickers = ["SPY","AAPL","MSFT"] df =
+# df has MultiIndex columns when multiple tickers
+yf.download(tickers, start="2010-01-01", end="2025-01-01", interval="1d", auto_adjust=True)
+```
 
 ### (B) Macroeconomic indicators (monthly/quarterly)
 
 **Source:** FRED (via `fredapi`)
 
-```python from fredapi import Fred fred = Fred(api_key="YOUR_FRED_API_KEY")
-unrate = fred.get_series("UNRATE", observation_start="1990-01-01") cpi =
-fred.get_series("CPIAUCSL", observation_start="1990-01-01") ```
+```python
+from fredapi import Fred fred = Fred(api_key="YOUR_FRED_API_KEY")
+unrate = fred.get_series("UNRATE", observation_start="1990-01-01")
+cpi = fred.get_series("CPIAUCSL", observation_start="1990-01-01")
+```
 
 ### (C) Interest rates / yield curve data
 
-* Treasury yields: FRED series (e.g., "DGS10" = 10-yr rate). Use `fredapi` as
+- Treasury yields: FRED series (e.g., "DGS10" = 10-yr rate). Use `fredapi` as
   above.
-* Swap rates: commercial vendors or Quandl.
+- Swap rates: commercial vendors or Quandl.
 
 ### (D) News / sentiment (text → features)
 
-* Datasets like FNSPID / FinMultiTime (research datasets include aligned news +
+- Datasets like FNSPID / FinMultiTime (research datasets include aligned news +
   prices). If not available directly, you can pull news via APIs
   (NewsAPI/AlphaSense) and compute sentiment.
 
-```python # Example: get headlines via newsapi (requires key) from newsapi
-import NewsApiClient newsapi = NewsApiClient(api_key='YOUR_KEY') resp =
-newsapi.get_everything(q='inflation OR Fed', from_param='2024-01-01',
-language='en') ```
+```python
+# Example: get headlines via newsapi (requires key) from newsapi
+import NewsApiClient newsapi = NewsApiClient(api_key='YOUR_KEY')
+resp = newsapi.get_everything(q='inflation OR Fed', from_param='2024-01-01', language='en')
+```
 
 ### (E) Limit Order Book / high-frequency (LOBSTER — paid/restricted)
 
-* **LOBSTER** provides order-book raw data (for intraday testing). Requires
+- **LOBSTER** provides order-book raw data (for intraday testing). Requires
   registration and download. Use LOBSTER’s downloader or provided files.
 
 ### (F) Crypto / alternative assets
 
 **Source:** CCXT (exchange APIs) or CoinGecko / Binance
 
-```python import ccxt, pandas as pd ex = ccxt.binance() ohlc =
-ex.fetch_ohlcv('BTC/USDT', timeframe='1h',
-since=ex.parse8601('2022-01-01T00:00:00Z')) df = pd.DataFrame(ohlc,
-columns=["ts","open","high","low","close","vol"]) df['ts'] =
-pd.to_datetime(df['ts'], unit='ms') ```
+```python
+import ccxt, pandas as pd ex = ccxt.binance()
+ohlc = ex.fetch_ohlcv('BTC/USDT', timeframe='1h', since=ex.parse8601('2022-01-01T00:00:00Z')) df = pd.DataFrame(ohlc, columns=["ts","open","high","low","close","vol"])
+df['ts'] = pd.to_datetime(df['ts'], unit='ms')
+```
 
 ### (G) Research multivariate datasets
 
-* **FinMultiTime**, **FNSPID**, **ChronoGraph / ChronoGraph-like** — research
+- **FinMultiTime**, **FNSPID**, **ChronoGraph / ChronoGraph-like** — research
   datasets combining prices + news + other modalities. These often come as
   downloadable archives (ArXiv / project pages) — treat as batch downloads and
   parse into DataFrames.
 
 ### (H) Alternative: Kaggle datasets & WRDS
 
-* **Kaggle**: multiple community datasets (intraday, historical returns). Use
+- **Kaggle**: multiple community datasets (intraday, historical returns). Use
   Kaggle API to download.
 
-```bash # shell: install kaggle and put kaggle.json in ~/.kaggle/ kaggle
-datasets download -d some/dataset-name ```
+```bash
+# shell: install kaggle and put kaggle.json in ~/.kaggle/ kaggle
+datasets download -d some/dataset-name
+```
 
 ### Data preparation notes
 
-* Align mixed frequencies: resample monthly → daily via forward-fill or include
+- Align mixed frequencies: resample monthly → daily via forward-fill or include
   as separate calendar features.
-* Create lags, percent changes, rolling stats (volatility), technical
+- Create lags, percent changes, rolling stats (volatility), technical
   indicators.
-* Carefully handle survivorship bias (for equities), corporate actions, and data
+- Carefully handle survivorship bias (for equities), corporate actions, and data
   revisions (macro data).
 
----
+______________________________________________________________________
 
 # 4. Research goals, experiments, and their effects on applications
 
@@ -168,185 +176,185 @@ Below are primary research goals and concrete experiments, with how
 success/failure affects each application.
 
 ## Goal A — Demonstrate multivariate Chronos improves forecasting accuracy vs
+
 univariate baseline
 
 **Experiments**
 
-* Train/evaluate: univariate Chronos (target history only) vs multivariate
+- Train/evaluate: univariate Chronos (target history only) vs multivariate
   Chronos (target + covariates).
-* Baselines: ARIMA/VAR, LSTM/TCN, classical factor models.
-* Datasets: index returns, sector returns, GDP growth + market returns.
+- Baselines: ARIMA/VAR, LSTM/TCN, classical factor models.
+- Datasets: index returns, sector returns, GDP growth + market returns.
 
 **Metrics**
 
-* Point: MAE, RMSE; Directional accuracy (up/down).
-* Probabilistic: CRPS, quantile loss; interval coverage.
-* Economic: backtest Sharpe ratio, hit rate after accounting for transaction
+- Point: MAE, RMSE; Directional accuracy (up/down).
+- Probabilistic: CRPS, quantile loss; interval coverage.
+- Economic: backtest Sharpe ratio, hit rate after accounting for transaction
   costs.
 
 **Effect on applications**
 
-* If successful → better signals for investors, more accurate risk forecasts for
+- If successful → better signals for investors, more accurate risk forecasts for
   risk officers, credible macro predictions for economists.
-* If improvement is marginal → the application should emphasize interpretability
+- If improvement is marginal → the application should emphasize interpretability
   or scenario analysis rather than trying to be a primary trading signal.
 
----
+______________________________________________________________________
 
 ## Goal B — Robustness across regimes (bull, bear, crisis)
 
 **Experiments**
 
-* Evaluate rolling-window performance across different regime labels (e.g., high
+- Evaluate rolling-window performance across different regime labels (e.g., high
   VIX vs low VIX).
-* Stress tests: simulate shocks (2008-like, COVID-like) by withholding those
+- Stress tests: simulate shocks (2008-like, COVID-like) by withholding those
   periods from training and testing generalization.
 
 **Effect**
 
-* Robust performance → suitable for institutional use/capital deployment; better
+- Robust performance → suitable for institutional use/capital deployment; better
   trust for policy use.
-* Fragile performance → limit application to advisory or research use only.
+- Fragile performance → limit application to advisory or research use only.
 
----
+______________________________________________________________________
 
 ## Goal C — Probabilistic / calibrated forecasts (not just point)
 
 **Experiments**
 
-* Train to output full predictive distributions (quantiles, parametric
+- Train to output full predictive distributions (quantiles, parametric
   distributions) and validate calibration (PIT, interval coverage).
-* Compare point forecasts vs probabilistic: e.g. use value-at-risk backtests.
+- Compare point forecasts vs probabilistic: e.g. use value-at-risk backtests.
 
 **Effect**
 
-* Good calibration enables risk managers to set capital buffers and helps retail
+- Good calibration enables risk managers to set capital buffers and helps retail
   users understand uncertainty.
-* Poor calibration means mis-estimated risk — dangerous for trading/portfolio
+- Poor calibration means mis-estimated risk — dangerous for trading/portfolio
   decisions.
 
----
+______________________________________________________________________
 
 ## Goal D — Feature attribution & causal checks (which variates matter)
 
 **Attribution Experiments**
 
 1. **Ablation study**: remove a covariate (interest rates) and measure drop in
-accuracy.
+   accuracy.
 2. **Permutation importance**: shuffle a covariate’s time order and measure
-performance drop.
+   performance drop.
 3. **Gradient-based / Integrated gradients**: compute sensitivity of predicted
-target to inputs (or attention weights).
+   target to inputs (or attention weights).
 4. **Counterfactuals**: feed scenarios (raise interest rates by X) and observe
-predicted target distributions.
+   predicted target distributions.
 5. **Classical causality check**: Granger causality on residuals / inputs as
-orthogonal check.
+   orthogonal check.
 
 **Effect**
 
-* If a covariate (e.g., interest rate) consistently shows high importance and
+- If a covariate (e.g., interest rate) consistently shows high importance and
   causal tests support predictive power, economists can use it as an actionable
   indicator.
-* If importance is context-dependent, the application must present conditional
+- If importance is context-dependent, the application must present conditional
   statements: “interest rates predict recession only in these regimes/contexts.”
 
----
+______________________________________________________________________
 
 ## Goal E — Mixed frequency & missing data handling
 
 **Experiments**
 
-* Compare strategies: upsampling (ffill), hierarchical models, explicit masking,
+- Compare strategies: upsampling (ffill), hierarchical models, explicit masking,
   or interpolation vs models that accept mixed inputs natively.
-* Test when macro monthly inputs are useful for daily forecasts and when they
+- Test when macro monthly inputs are useful for daily forecasts and when they
   are not.
 
 **Effect**
 
-* Good mixed-frequency handling → broader applicability (macro + market
+- Good mixed-frequency handling → broader applicability (macro + market
   combined).
-* Poor handling → increase in noise; application should restrict to matching
+- Poor handling → increase in noise; application should restrict to matching
   frequencies.
 
----
+______________________________________________________________________
 
 ## Goal F — Efficiency & deployment (Bolt / adapters)
 
 **Experiments**
 
-* Measure inference latency and memory of full Chronos vs Bolt variants or
+- Measure inference latency and memory of full Chronos vs Bolt variants or
   adapter-based Chronos (ChronosX) for multivariate inputs.
-* Test tradeoffs between speed and accuracy.
+- Test tradeoffs between speed and accuracy.
 
 **Effect**
 
-* Low latency variant → usable for intraday trading / alerts.
-* Heavy models → best reserved for overnight batch forecasts and research.
+- Low latency variant → usable for intraday trading / alerts.
+- Heavy models → best reserved for overnight batch forecasts and research.
 
----
+______________________________________________________________________
 
 # 5. Evaluation / validation protocols (practical)
 
-* **Walk-forward / rolling evaluation** with no look-ahead.
-* **Backtesting** with transaction costs, slippage, and realistic execution
+- **Walk-forward / rolling evaluation** with no look-ahead.
+- **Backtesting** with transaction costs, slippage, and realistic execution
   assumptions.
-* **Stratified evaluation** by regime (low/high vol, pre/post crises).
-* **Calibration tests** for probabilistic outputs (PIT histograms, interval
+- **Stratified evaluation** by regime (low/high vol, pre/post crises).
+- **Calibration tests** for probabilistic outputs (PIT histograms, interval
   coverage).
-* **Statistical significance**: Diebold-Mariano tests for forecast comparison.
-* **Robustness checks**: feature noise injection, missingness experiments,
+- **Statistical significance**: Diebold-Mariano tests for forecast comparison.
+- **Robustness checks**: feature noise injection, missingness experiments,
   out-of-sample geographies (e.g., train US, test EU).
 
----
+______________________________________________________________________
 
 # 6. Deliverables & user artifacts
 
-* **Reproducible code** (data preprocessing, training loops, evaluation).
-* **Benchmarks**: tables/plots comparing univariate vs multivariate across
+- **Reproducible code** (data preprocessing, training loops, evaluation).
+- **Benchmarks**: tables/plots comparing univariate vs multivariate across
   datasets.
-* **Feature attribution reports**: per-target importance ranking +
+- **Feature attribution reports**: per-target importance ranking +
   counterfactual scenarios.
-* **Dashboard prototype**: forecasts + top drivers + scenario simulator.
-* **Paper / technical report**: experiments, methods, limitations.
+- **Dashboard prototype**: forecasts + top drivers + scenario simulator.
+- **Paper / technical report**: experiments, methods, limitations.
 
----
+______________________________________________________________________
 
 # 7. Example experiment matrix (concise)
 
-* **Targets**: S&P500 daily returns, VIX, quarterly GDP growth.
-* **Covariate groups**: interest rates (short & long), inflation, cross-asset
+- **Targets**: S&P500 daily returns, VIX, quarterly GDP growth.
+- **Covariate groups**: interest rates (short & long), inflation, cross-asset
   returns, sentiment, volatility, technical indicators.
-* **Models**: univariate Chronos, multivariate Chronos (fine-tuned), ARIMA/VAR,
+- **Models**: univariate Chronos, multivariate Chronos (fine-tuned), ARIMA/VAR,
   LSTM.
-* **Metrics**: RMSE, direction accuracy, CRPS, backtest Sharpe.
-* **Attribution**: ablation + permutation + integrated gradients + Granger.
+- **Metrics**: RMSE, direction accuracy, CRPS, backtest Sharpe.
+- **Attribution**: ablation + permutation + integrated gradients + Granger.
 
----
+______________________________________________________________________
 
 # 8. How to interpret “interest rate → recession” within this framework
 
-* Use combined evidence: model attribution (e.g., integrated gradients shows
+- Use combined evidence: model attribution (e.g., integrated gradients shows
   interest rates have high influence for horizon 4–8 quarters) + ablation
   (removing yields reduces recession forecasting AUC) + Granger tests (interest
   rate changes Granger-cause GDP drops) + counterfactuals (simulate rate hike
   and compute effect on predicted GDP).
-* If all methods converge → stronger evidence that interest rates are predictive
+- If all methods converge → stronger evidence that interest rates are predictive
   in your datasets & regime. If results are mixed → the conclusion must be
   conditional: e.g., “rate rises predict recession primarily when the yield
   curve is inverted and inflation is above X.”
 
----
+______________________________________________________________________
 
 # 9. Risks, limitations & mitigations
 
-* **Overfitting**: mitigate with regularization, early stopping,
+- **Overfitting**: mitigate with regularization, early stopping,
   cross-validation, fewer features, and heavy out-of-sample testing.
-* **Spurious correlations**: use multiple attribution methods + causality tests
-  + economic plausibility.
-* **Regime shifts**: include regime-aware evaluation and domain adaptation
+- **Spurious correlations**: use multiple attribution methods + causality tests
+  - economic plausibility.
+- **Regime shifts**: include regime-aware evaluation and domain adaptation
   experiments.
-* **Data quality & survivorship bias**: use full historical universe, correct
+- **Data quality & survivorship bias**: use full historical universe, correct
   for corporate actions, and check for data lags/revisions.
-* **Ethical/regulatory**: be transparent about uncertainty and avoid promising
+- **Ethical/regulatory**: be transparent about uncertainty and avoid promising
   guaranteed returns.
-````

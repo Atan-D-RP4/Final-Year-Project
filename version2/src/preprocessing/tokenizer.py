@@ -108,7 +108,7 @@ class FinancialDataTokenizer:
                 logger.warning(f"Feature {col} not found in data")
                 continue
 
-            series = data[col].fillna(method="ffill").fillna(method="bfill")
+            series = data[col].ffill().bfill()
             tokens = self._transform_series(col, series)
             tokens_dict[col] = tokens
 

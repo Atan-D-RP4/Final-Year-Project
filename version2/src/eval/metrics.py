@@ -1,6 +1,5 @@
 """Evaluation metrics for time series forecasting."""
 
-
 import numpy as np
 from sklearn.metrics import (
     accuracy_score,
@@ -9,7 +8,7 @@ from sklearn.metrics import (
     mean_squared_error,
 )
 
-from ..utils.logger import get_logger
+from src.utils.logger import get_logger
 
 logger = get_logger(__name__)
 
@@ -383,3 +382,4 @@ def calculate_all_metrics(
         results.update(prob_results)
 
     return results
+

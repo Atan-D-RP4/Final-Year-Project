@@ -69,7 +69,7 @@ class DataCleaner:
         data = self._handle_missing_values(data)
 
         # Forward fill for economic indicators (common practice)
-        data = data.fillna(method="ffill")
+        data = data.ffill()
 
         # Ensure proper data types
         data = data.astype(float, errors="ignore")
@@ -190,10 +190,10 @@ class DataCleaner:
             )
 
         # Forward fill remaining missing values
-        data = data.fillna(method="ffill")
+        data = data.ffill()
 
         # Backward fill any remaining missing values at the beginning
-        data = data.fillna(method="bfill")
+        data = data.bfill()
 
         return data
 
@@ -222,7 +222,7 @@ class DataCleaner:
                 data.loc[z_scores > threshold, col] = np.nan
 
         # Fill any new NaN values created by outlier removal
-        return data.fillna(method="ffill").fillna(method="bfill")
+        return data.ffill().bfill()
 
 
 def create_features(data: pd.DataFrame) -> pd.DataFrame:
@@ -273,7 +273,7 @@ def create_features(data: pd.DataFrame) -> pd.DataFrame:
     features_data = features_data.replace([np.inf, -np.inf], np.nan)
 
     # Forward fill any new NaN values
-    features_data = features_data.fillna(method="ffill").fillna(method="bfill")
+    features_data = features_data.ffill().bfill()
 
     logger.info(f"Created features dataset with shape: {features_data.shape}")
     return features_data

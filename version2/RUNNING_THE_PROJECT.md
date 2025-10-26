@@ -4,14 +4,16 @@ This document provides comprehensive instructions for running the multivariate f
 
 ## Project Overview
 
-This project implements **Phase 3** of a comprehensive financial forecasting system that includes:
+This project implements **Phase 3 and Phase 4** of a comprehensive financial forecasting system that includes:
 
 - **Data Collection & Cleaning**: Fetches financial and economic data from Yahoo Finance and FRED
 - **Tokenization**: Converts financial time series into tokens compatible with Chronos models
 - **Baseline Models**: Implements multiple forecasting models (Naive, ARIMA, VAR, LSTM, Linear)
 - **Chronos Integration**: Zero-shot forecasting using Chronos foundation models (with mock implementation)
-- **Evaluation Framework**: Comprehensive metrics for forecast evaluation
-- **Experiment Runner**: Automated Phase 3 experiments comparing all models
+- **Fine-Tuning**: Advanced model fine-tuning capabilities for improved performance
+- **Causal Attribution**: Analysis of feature importance and model interpretability
+- **Evaluation Framework**: Comprehensive metrics for forecast evaluation including probabilistic metrics
+- **Experiment Runner**: Automated experiments for both zero-shot comparison and fine-tuning analysis
 
 ## Project Structure
 
@@ -33,7 +35,8 @@ version2/
 │   │   └── logger.py            # Logging utilities
 │   └── main.py                   # Main entry point
 ├── experiments/                  # Experiment scripts
-│   └── phase3_zero_shot.py     # Phase 3 experiment runner
+│   ├── phase3_zero_shot.py     # Phase 3 experiment runner
+│   └── phase4_fine_tuning.py   # Phase 4 experiment runner
 ├── data/                        # Data storage
 │   ├── raw/                     # Raw data files
 │   └── cleaned/                 # Cleaned data files
@@ -105,8 +108,21 @@ uv run python main.py --phase 3
 python main.py --phase 3
 ```
 
+### Running Phase 4: Fine-Tuning and Causal Attribution
+
+Phase 4 focuses on fine-tuning Chronos models and conducting causal attribution analysis:
+
+```bash
+# Using uv (recommended)
+uv run python experiments/phase4_fine_tuning.py
+
+# Or directly with Python (if dependencies are installed)
+python experiments/phase4_fine_tuning.py
+```
+
 ### Command Line Options
 
+**For Phase 3:**
 ```bash
 python main.py [OPTIONS]
 
@@ -118,22 +134,72 @@ Options:
   --help                       Show help message
 ```
 
+**For Phase 4:**
+```bash
+python experiments/phase4_fine_tuning.py [OPTIONS]
+
+Options:
+  --config PATH                 Path to configuration file
+  --fred-api-key KEY           FRED API key for economic data
+  --log-level {DEBUG,INFO,WARNING,ERROR}  Logging level (default: INFO)
+  --help                       Show help message
+```
+
 ### Examples
 
-1. **Basic run with sample data**:
+1. **Basic run with sample data (Phase 3)**:
    ```bash
    uv run python main.py --phase 3
    ```
 
-2. **Run with FRED API key**:
+2. **Run Phase 3 with FRED API key**:
    ```bash
    uv run python main.py --phase 3 --fred-api-key YOUR_API_KEY
    ```
 
-3. **Run with debug logging**:
+3. **Run Phase 3 with debug logging**:
    ```bash
    uv run python main.py --phase 3 --log-level DEBUG
    ```
+
+4. **Run Phase 4 fine-tuning experiments**:
+   ```bash
+   uv run python experiments/phase4_fine_tuning.py
+   ```
+
+5. **Run Phase 4 with debug logging**:
+   ```bash
+   uv run python experiments/phase4_fine_tuning.py --log-level DEBUG
+   ```
+
+## What Phase 4 Does
+
+Phase 4 focuses on fine-tuning Chronos models and conducting causal attribution analysis:
+
+### 1. Data Preparation
+- Fetches financial data (S&P 500, VIX, Treasury yields) from Yahoo Finance
+- Fetches economic data (unemployment, inflation, Fed funds rate) from FRED
+- Cleans and aligns data across different frequencies
+- Creates additional technical indicators and features
+
+### 2. Fine-Tuning Experiments
+- Fine-tunes Chronos foundation models on financial datasets
+- Adapts pre-trained models to specific market conditions and data patterns
+- Evaluates fine-tuned models using comprehensive metrics (MAE, RMSE, MASE, etc.)
+- Compares performance against zero-shot baselines
+
+### 3. Causal Attribution Analysis
+- Analyzes the contribution of different covariates to model predictions
+- Implements multiple attribution methods:
+  - **Ablation Importance**: Measures impact by removing features systematically
+  - **Permutation Importance**: Assesses feature importance through shuffling
+  - **SHAP Analysis**: Uses SHAP values for detailed feature impact analysis
+- Identifies key economic and market indicators driving forecasts
+
+### 4. Results Analysis
+- Compares fine-tuned models against baseline and zero-shot approaches
+- Generates attribution reports showing feature importance rankings
+- Provides insights into model interpretability and decision-making processes
 
 ## What Phase 3 Does
 
@@ -170,18 +236,13 @@ Tests different strategies for converting financial data to tokens:
 - Generates performance reports and visualizations
 - Identifies best-performing models for each metric
 
-## Expected Output
 
-When you run the project, you'll see:
+Best models by metric:
+  mae                 : baseline_linear        (0.0234)
+  rmse                : baseline_lstm          (0.0456)
+  directional_accuracy: chronos_chronos_small  (67.8900)
 
-1. **Progress logs** showing each phase of the experiment
-2. **Model training** progress for each baseline model
-3. **Results summary** showing the best models by metric
-4. **Saved results** in the `results/phase3/` directory
-
-Example output:
-```
-PHASE 3 RESULTS SUMMARY
+Detailed results saved to: /path/to/results/phase3
 ==================================================
 
 Best models by metric:
@@ -276,22 +337,24 @@ You can customize the configuration by:
 
 ## Research Context
 
-This implementation represents **Phase 3** of a larger research project on:
+This implementation represents **Phase 3 and Phase 4** of a larger research project on:
 - **Multivariate Financial Forecasting** using foundation models
 - **Zero-shot transfer learning** for financial time series
 - **Tokenization strategies** for financial data
+- **Fine-tuning adaptation** for domain-specific improvements
 - **Attribution analysis** for model interpretability
 
-The complete research plan includes 8 phases, with this implementation covering the core forecasting and baseline comparison functionality.
+The complete research plan includes 8 phases, with this implementation covering the core forecasting, fine-tuning, and attribution functionalities.
 
 ## Next Steps
 
-After running Phase 3, you can:
-1. Analyze the detailed results in `results/phase3/`
-2. Experiment with different model configurations
-3. Implement additional phases (attribution analysis, robustness testing)
-4. Extend to new datasets or forecasting targets
-5. Deploy the best-performing models in production
+After running Phase 3 and Phase 4, you can:
+1. Analyze the detailed results in `results/phase3/` and `results/phase4/`
+2. Compare zero-shot vs fine-tuned model performance
+3. Experiment with different model configurations and attribution methods
+4. Implement additional phases (backtesting, robustness testing)
+5. Extend to new datasets or forecasting targets
+6. Deploy the best-performing models in production
 
 ## Support
 

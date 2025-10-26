@@ -4,7 +4,7 @@
 import numpy as np
 import pandas as pd
 import torch
-from transformers import AutoModelForCausalLM, AutoTokenizer, PreTrainedModel
+from chronos import ChronosPipeline
 
 from src.preprocessing.tokenizer import FinancialDataTokenizer
 from src.utils.logger import get_logger
@@ -41,8 +41,7 @@ class ChronosFinancialForecaster:
             self.device = device
 
         # Model components
-        self.model: PreTrainedModel | None = None
-        self.tokenizer: AutoTokenizer | None = None
+        self.model: ChronosPipeline | None = None
         self.data_tokenizer: FinancialDataTokenizer | None = None
 
         # State
@@ -58,15 +57,14 @@ class ChronosFinancialForecaster:
             logger.info(f"Loading Chronos model: {self.model_name}")
 
             # Try to load from Hugging Face
-            self.tokenizer = AutoTokenizer.from_pretrained(self.model_name)
-            self.model = AutoModelForCausalLM.from_pretrained(
-                self.model_name, torch_dtype=torch.float32, device_map=self.device
+            self.model = ChronosPipeline.from_pretrained(
+                self.model_name,
+                device_map=self.device,
+                torch_dtype=torch.bfloat16,
             )
-            if self.model is None or self.tokenizer is None:
-                raise ValueError("Failed to load Chronos model or tokenizer")
+            if self.model is None:
+                raise ValueError("Failed to load Chronos model pipeline")
 
-            if hasattr(self.model, "eval"):
-                self.model.eval()
             self.is_loaded = True
             logger.info("Chronos model loaded successfully")
 
@@ -134,50 +132,20 @@ class ChronosFinancialForecaster:
     def _chronos_forecast(self, data: pd.DataFrame) -> np.ndarray:
         """Generate forecast using actual Chronos model."""
         try:
-            if (
-                self.data_tokenizer is None
-                or self.model is None
-                or self.tokenizer is None
-            ):
-                raise ValueError("Model or tokenizer not properly initialized")
-            # Tokenize the data
-            tokenized = self.data_tokenizer.transform(data)
-            combined_tokens = tokenized["combined"]
+            if self.model is None:
+                raise ValueError("Model not properly initialized")
 
-            # Prepare input for Chronos
-            # Note: This is a simplified implementation
-            # Real Chronos integration would require proper token handling
+            if self.target_col not in data.columns:
+                raise ValueError(f"Target column {self.target_col} not found in data")
 
-            if isinstance(combined_tokens, np.ndarray):
-                input_ids = torch.tensor(combined_tokens[-self.context_length:]).unsqueeze(0)
-                input_ids = input_ids.to(self.device)
-            else:
-                raise ValueError("Combined tokens should be numpy array")
+            context = torch.tensor(data[self.target_col].values)
+            forecast = self.model.predict(context, self.prediction_length)
 
-            # Generate predictions
-            with torch.no_grad():
-                if hasattr(self.model, "generate"):
-                    eos_token_id = getattr(self.tokenizer, "eos_token_id", None)
-                    outputs = self.model.generate(
-                        input_ids,
-                        max_new_tokens=self.prediction_length,
-                        do_sample=True,
-                        temperature=0.7,
-                        pad_token_id=eos_token_id,
-                    )
-                else:
-                    raise AttributeError("Model does not have generate method")
+            # The forecast is a tensor of shape [num_series, num_samples, prediction_length]
+            # For now, we take the median of the samples.
+            median_forecast = np.quantile(forecast[0].cpu().numpy(), 0.5, axis=0)
 
-            # Extract generated tokens
-            generated_tokens = outputs[0, len(input_ids[0]):].cpu().numpy()
-
-            # Convert tokens back to values
-            # This is simplified - real implementation would need proper decoding
-            predictions = self.data_tokenizer.inverse_transform(
-                generated_tokens[: self.prediction_length], self.target_col
-            )
-
-            return predictions
+            return median_forecast
 
         except Exception as e:
             logger.error(f"Error in Chronos forecast: {e}")
