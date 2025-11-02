@@ -51,7 +51,7 @@ This project implements **Phase 3** of a comprehensive financial forecasting res
 
 ### Tokenization Strategies
 - **Uniform Binning**: Equal-width quantization
-- **Quantile Binning**: Equal-frequency quantization  
+- **Quantile Binning**: Equal-frequency quantization
 - **K-means Clustering**: Learned cluster centers
 - **Advanced Features**: Technical indicators + time features
 
@@ -76,8 +76,7 @@ This project implements **Phase 3** of a comprehensive financial forecasting res
 
 ## 📊 Example Results
 
-```
-PHASE 3 RESULTS SUMMARY
+Detailed results saved to: results/phase3/
 ==================================================
 
 Best models by metric:

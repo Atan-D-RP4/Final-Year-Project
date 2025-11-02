@@ -56,7 +56,9 @@ class Phase3Experiments:
 
         logger.info("Phase 3 experiment runner initialized")
 
-    def run_all_experiments(self) -> dict:
+    def run_all_experiments(
+        self,
+    ) -> dict:  # Adjusted return type annotation for consistency
         """Run all Phase 3 experiments."""
         logger.info("Starting Phase 3 experiments")
 

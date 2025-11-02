@@ -5,6 +5,7 @@ import sys
 from pathlib import Path
 
 from experiments.phase3_zero_shot import Phase3Experiments
+from experiments.phase4_fine_tuning import Phase4Experiments
 from src.utils.config import load_config
 from src.utils.logger import setup_logger
 
@@ -22,7 +23,7 @@ def main() -> None:
     parser.add_argument(
         "--phase",
         type=str,
-        choices=["3", "phase3", "zero-shot"],
+        choices=["3", "phase3", "zero-shot", "4", "phase4", "fine-tuning"],
         default="3",
         help="Which phase to run (currently only Phase 3 is implemented)",
     )
@@ -87,6 +88,19 @@ def main() -> None:
                     print("=" * 50)
             else:
                 logger.error("Phase 3 failed")
+                sys.exit(1)
+        elif args.phase == "4":
+            logger.info("Running Phase 4: Fine-Tuning & Causal Attribution")
+
+            experiments = Phase4Experiments(config)
+            results = experiments.run_all_experiments()
+
+            if results:
+                logger.info("Phase 4 completed successfully")
+                logger.info("Results:")
+                logger.info(results)
+            else:
+                logger.error("Phase 4 failed")
                 sys.exit(1)
         else:
             logger.error(f"Phase {args.phase} not implemented yet")

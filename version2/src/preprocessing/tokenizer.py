@@ -123,7 +123,7 @@ class FinancialDataTokenizer:
 
     def fit_transform(
         self, data: pd.DataFrame
-    ) -> dict[str, dict[str, np.ndarray] | np.ndarray]:
+    ) -> dict[str, dict[str, np.ndarray] | np.ndarray]:  # Returns tokenized outputs
         """Fit and transform in one step."""
         return self.fit(data).transform(data)
 
