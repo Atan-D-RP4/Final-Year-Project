@@ -226,15 +226,15 @@ class VARForecaster(BaseForecaster):
         except Exception as e:
             logger.error(f"Error fitting VAR model: {e}")
             # Fallback to simple VAR with fewer lags
-            try:
-                if self.model is not None:
+            if self.model is not None:
+                try:
                     self.fitted_model = self.model.fit(maxlags=2)
                     self.is_fitted = True
-                else:
-                    raise ValueError("VAR model is None")
-            except Exception as e2:
-                logger.error(f"Error fitting fallback VAR model: {e2}")
-                raise e2
+                except Exception as e2:
+                    logger.error(f"Error fitting fallback VAR model: {e2}")
+                    raise e2
+            else:
+                raise ValueError("VAR model is None")
 
         return self
 
