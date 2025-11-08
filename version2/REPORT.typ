@@ -729,8 +729,8 @@ Evaluations across multiple forecast horizons reveal how performance degrades wi
 #heading(level: 3)[Overall Performance Comparison]
 
 #figure(
-  image("./comparison.png", width: 85%),
-  caption: [Performance Metrics Across All Models and Horizons],
+  image("./comparison.png", width: 80%),
+  caption: [Metric Comparison],
 )
 
 #heading(level: 3)[Point Forecast Accuracy]
