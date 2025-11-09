@@ -124,9 +124,10 @@ class ZeroShotExperiment:
         self,
         train_data: pd.DataFrame,
         test_data: pd.DataFrame,
-        target_col: str = "Close",
-        prediction_length: int = 20,
+        target_col: str,
+        prediction_length: int,
         eval_config: Optional[EvalConfig] = None,
+        fine_tuned_model_path: Optional[str] = None,
     ) -> dict:
         """Run zero-shot comparison between Chronos and baselines.
 
@@ -174,6 +175,17 @@ class ZeroShotExperiment:
                 device="cpu",
             ),
         }
+
+        # Add fine-tuned Chronos model if path provided
+        if fine_tuned_model_path:
+            try:
+                from experiments.phase4.fine_tune import Phase4Experiment
+                phase4_exp = Phase4Experiment()
+                fine_tuned_model = phase4_exp.load_fine_tuned_model(fine_tuned_model_path)
+                models["Chronos (fine-tuned)"] = fine_tuned_model
+                self.logger.info(f"Added fine-tuned Chronos model from {fine_tuned_model_path}")
+            except Exception as e:
+                self.logger.warning(f"Could not load fine-tuned model: {e}")
 
         evaluator = ForecastEvaluator()
 
@@ -420,6 +432,7 @@ class ZeroShotExperiment:
         target_col: str = "Close",
         prediction_length: int = 20,
         experiment_name: str = "zero_shot",
+        fine_tuned_model_path: Optional[str] = None,
     ) -> dict:
         """Run complete zero-shot experiment.
 
@@ -447,6 +460,7 @@ class ZeroShotExperiment:
             target_col=target_col,
             prediction_length=prediction_length,
             eval_config=eval_config,
+            fine_tuned_model_path=fine_tuned_model_path,
         )
 
         # Save results
@@ -475,6 +489,7 @@ def main():
         target_col=target_symbol,
         prediction_length=20,
         experiment_name="zero_shot_default",
+        fine_tuned_model_path=None,  # Can be set to a path to use fine-tuned model
     )
 
     print("\n" + "=" * 80)

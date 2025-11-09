@@ -43,6 +43,8 @@ dependencies = [
     "pytz>=2024.1",
     "pydantic>=2.0.0",
     "pyyaml>=6.0",
+    "accelerate>=1.11.0",
+    "peft>=0.17.1",
 ]
 
 [project.optional-dependencies]
@@ -60,6 +62,9 @@ dev = [
     "pytest>=7.4.0",
     "pytest-cov>=4.1.0",
 ]
+
+[tool.uv]
+link-mode = "symlink"
 
 [tool.ruff]
 target-version = "py310"
@@ -100,7 +105,7 @@ python-version = "3.10"
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 python_files = ["test_*.py"]
-addopts = "-v --cov=src --cov-report=term-only"
+addopts = "-v --cov=src --cov-report=term"
 
 [tool.mypy]
 python_version = "3.10"
