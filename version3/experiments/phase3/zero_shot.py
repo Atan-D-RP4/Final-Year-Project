@@ -104,7 +104,7 @@ class ZeroShotExperiment:
 
         # Clean data
         cleaner = DataCleaner()
-        data = cleaner.clean(data)
+        data = cleaner.clean_market_data(data)
         data = create_features(data)
 
         self.logger.info(f"Cleaned data shape: {data.shape}")
@@ -147,6 +147,8 @@ class ZeroShotExperiment:
         self.logger.info("ZERO-SHOT FORECASTING COMPARISON")
         self.logger.info("=" * 80)
 
+        horizon = prediction_length
+        
         results = {
             "timestamp": datetime.now().isoformat(),
             "target_col": target_col,
@@ -215,7 +217,7 @@ class ZeroShotExperiment:
                     pred = model.forecast(
                         test_data,
                         target_col,
-                        prediction_length,
+                        horizon,
                     )
 
                 # Ensure correct length
@@ -238,7 +240,9 @@ class ZeroShotExperiment:
         # Evaluate forecasts
         self.logger.info("Evaluating forecasts...")
 
-        actual = test_data[target_col].values
+        # Use the same helper function for consistency
+        from src.models.baselines import _extract_target_column
+        actual = _extract_target_column(test_data, target_col)
 
         evaluation_results = {}
         for model_name, pred in forecasts.items():
@@ -465,8 +469,10 @@ def main():
     )
 
     # Run with default configurations
+    # Use first target symbol (S&P 500)
+    target_symbol = "^GSPC"
     results = experiment.run(
-        target_col="Close",
+        target_col=target_symbol,
         prediction_length=20,
         experiment_name="zero_shot_default",
     )

@@ -41,9 +41,8 @@ class YahooFinanceFetcher:
         )
 
         if len(tickers) == 1:
-            data.columns = pd.MultiIndex.from_product(
-                [tickers, data.columns]
-            )
+            # yfinance returns (Price, Ticker) format, swap to (Ticker, Price)
+            data.columns = data.columns.swaplevel(0, 1)
 
         return data
 

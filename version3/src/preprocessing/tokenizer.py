@@ -202,13 +202,16 @@ class AdvancedTokenizer(FinancialDataTokenizer):
         # Get closing prices
         close_cols = [col for col in data.columns if "Close" in str(col)]
 
+        # Collect all new columns to add at once for better performance
+        new_cols = {}
+        
         for col in close_cols:
             if col not in result.columns:
                 continue
 
             # Simple moving averages
             for window in [5, 20, 50]:
-                result[f"{col}_SMA_{window}"] = (
+                new_cols[f"{col}_SMA_{window}"] = (
                     result[col].rolling(window).mean()
                 )
 
@@ -217,9 +220,13 @@ class AdvancedTokenizer(FinancialDataTokenizer):
             gain = (delta.where(delta > 0, 0)).rolling(window=14).mean()
             loss = (-delta.where(delta < 0, 0)).rolling(window=14).mean()
             rs = gain / loss.replace(0, 1e-10)
-            result[f"{col}_RSI"] = 100 - (100 / (1 + rs))
+            new_cols[f"{col}_RSI"] = 100 - (100 / (1 + rs))
 
-        return result.fillna(method="ffill").fillna(method="bfill")
+        # Add all new columns at once to avoid fragmentation
+        if new_cols:
+            result = pd.concat([result, pd.DataFrame(new_cols, index=result.index)], axis=1)
+
+        return result.ffill().bfill()
 
     def _add_time_features(
         self,

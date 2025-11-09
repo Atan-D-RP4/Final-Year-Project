@@ -15,6 +15,31 @@ import torch
 import torch.nn as nn
 
 
+def _extract_target_column(data: pd.DataFrame, target_col: str) -> np.ndarray:
+    """Extract target column properly handling MultiIndex columns."""
+    if isinstance(data.columns, pd.MultiIndex):
+        # Try (Ticker, Price) format first
+        if (target_col, 'Close') in data.columns:
+            return data[(target_col, 'Close')].values
+        elif (target_col, 'Adj Close') in data.columns:
+            return data[(target_col, 'Adj Close')].values
+        
+        # Try (Price, Ticker) format (yfinance default)
+        elif ('Close', target_col) in data.columns:
+            return data[('Close', target_col)].values
+        elif ('Adj Close', target_col) in data.columns:
+            return data[('Adj Close', target_col)].values
+        
+        else:
+            # Find any column with the target symbol
+            for col in data.columns:
+                if target_col in str(col) and 'Close' in str(col):
+                    return data[col].values
+            raise ValueError(f"Could not find Close price column for {target_col}")
+    else:
+        return data[target_col].values
+
+
 class BaselineForecaster(ABC):
     """Abstract base class for baseline forecasters."""
 
@@ -81,7 +106,8 @@ class NaiveForecaster(BaselineForecaster):
         Returns:
             Repeated last value
         """
-        last_value = test_data[target_col].iloc[-1]
+        target_values = _extract_target_column(test_data, target_col)
+        last_value = target_values[-1]
         return np.full(horizon, last_value)
 
 
@@ -109,7 +135,8 @@ class SeasonalNaiveForecaster(BaselineForecaster):
             train_data: Training DataFrame
             target_col: Target column name
         """
-        self.seasonal_values = train_data[target_col].values[
+        target_values = _extract_target_column(train_data, target_col)
+        self.seasonal_values = target_values[
             -self.seasonal_period :
         ]
 
@@ -205,8 +232,9 @@ class ARIMAForecaster(BaselineForecaster):
             target_col: Target column name
         """
         try:
+            target_values = _extract_target_column(train_data, target_col)
             self.model = ARIMA(
-                train_data[target_col], order=self.order
+                target_values, order=self.order
             ).fit()
         except Exception as e:
             print(f"Warning: ARIMA fit failed: {e}")
@@ -337,7 +365,7 @@ class LinearRegressionForecaster(BaselineForecaster):
             train_data: Training DataFrame
             target_col: Target column name
         """
-        target = train_data[target_col].values
+        target = _extract_target_column(train_data, target_col)
 
         # Create lagged features
         X = []
@@ -380,7 +408,7 @@ class LinearRegressionForecaster(BaselineForecaster):
         if self.model is None:
             return np.zeros(horizon)
 
-        target = test_data[target_col].values
+        target = _extract_target_column(test_data, target_col)
         forecasts = []
 
         for h in range(horizon):
@@ -488,7 +516,7 @@ class LSTMForecaster(BaselineForecaster):
             batch_size: Batch size
             learning_rate: Learning rate
         """
-        target = train_data[target_col].values.reshape(-1, 1)
+        target = _extract_target_column(train_data, target_col).reshape(-1, 1)
 
         # Standardize
         target_scaled = self.scaler.fit_transform(target)
@@ -560,7 +588,7 @@ class LSTMForecaster(BaselineForecaster):
         if self.model is None:
             return np.zeros(horizon)
 
-        target = test_data[target_col].values.reshape(-1, 1)
+        target = _extract_target_column(test_data, target_col).reshape(-1, 1)
         target_scaled = self.scaler.transform(target)
 
         self.model.eval()
@@ -609,7 +637,7 @@ class ExponentialSmoothingForecaster(BaselineForecaster):
             train_data: Training DataFrame
             target_col: Target column name
         """
-        target = train_data[target_col].values
+        target = _extract_target_column(train_data, target_col)
         level = target[0]
 
         for val in target[1:]:

@@ -68,13 +68,9 @@ class ChronosFinancialForecaster:
             self.model = AutoModelForCausalLM.from_pretrained(
                 self.model_name,
                 device_map=self.device,
-                torch_dtype=(
-                    torch.bfloat16 if self.mixed_precision else torch.float32
-                ),
+                torch_dtype=(torch.bfloat16 if self.mixed_precision else torch.float32),
             )
-            self.tokenizer_model = AutoTokenizer.from_pretrained(
-                self.model_name
-            )
+            self.tokenizer_model = AutoTokenizer.from_pretrained(self.model_name)
             self.model_loaded = True
             print("Model loaded successfully")
         except Exception as e:
@@ -125,12 +121,10 @@ class ChronosFinancialForecaster:
             raise ValueError("Tokenizer not fitted. Call fit() first.")
 
         # Extract target series
-        target_series = test_data[[target_col]].values.flatten()
+        target_series = test_data[[target_col]].to_numpy().flatten()
 
         # Tokenize
-        tokens_dict = self.tokenizer_data.transform(
-            test_data[[target_col]]
-        )
+        tokens_dict = self.tokenizer_data.transform(test_data[[target_col]])
         tokens = tokens_dict[target_col]
 
         # Use context window
@@ -141,9 +135,7 @@ class ChronosFinancialForecaster:
             forecasts = self._chronos_forecast(context_tokens, num_samples)
         else:
             # Mock forecast for testing
-            forecasts = self._mock_forecast(
-                target_series, num_samples
-            )
+            forecasts = self._mock_forecast(target_series, num_samples)
 
         return {
             "median": np.median(forecasts, axis=0),
@@ -255,14 +247,10 @@ class ChronosFinancialForecaster:
         for epoch in range(epochs):
             epoch_loss = 0.0
             for seq, target in sequences:
-                seq_tensor = torch.tensor(
-                    seq, dtype=torch.long, device=self.device
-                )
+                seq_tensor = torch.tensor(seq, dtype=torch.long, device=self.device)
 
                 # Forward pass
-                with torch.cuda.amp.autocast(
-                    enabled=self.mixed_precision
-                ):
+                with torch.cuda.amp.autocast(enabled=self.mixed_precision):
                     outputs = self.model(input_ids=seq_tensor)
                     # Mock loss computation
                     loss = torch.tensor(0.1, device=self.device)
@@ -336,9 +324,7 @@ class ChronosFinancialForecaster:
                 num_bins=tokenizer_state["num_bins"],
             )
             self.tokenizer_data.bin_edges = tokenizer_state["bin_edges"]
-            self.tokenizer_data.column_stats = tokenizer_state[
-                "column_stats"
-            ]
+            self.tokenizer_data.column_stats = tokenizer_state["column_stats"]
 
         print(f"Model loaded from {path}")
 
@@ -364,15 +350,11 @@ class ChronosFinancialForecaster:
             metrics = ["mae", "rmse", "mase", "directional_accuracy"]
 
         # Generate forecasts
-        forecasts = self.forecast_zero_shot(
-            test_data, target_col, num_samples=100
-        )
+        forecasts = self.forecast_zero_shot(test_data, target_col, num_samples=100)
         pred = forecasts["median"]
 
         # Get actual values
-        actual = test_data[[target_col]].values.flatten()[
-            -len(pred) :
-        ]
+        actual = test_data[[target_col]].values.flatten()[-len(pred) :]
 
         # Calculate metrics
         results = calculate_all_metrics(

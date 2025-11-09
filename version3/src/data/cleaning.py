@@ -42,10 +42,10 @@ class DataCleaner:
 
         # Forward-fill missing values for market data
         if forward_fill:
-            cleaned = cleaned.fillna(method="ffill")
+            cleaned = cleaned.ffill()
 
         # Fill remaining NaNs with backward fill
-        cleaned = cleaned.fillna(method="bfill")
+        cleaned = cleaned.bfill()
 
         return cleaned
 
