@@ -247,7 +247,9 @@ class ZeroShotExperiment:
                 self.logger.info(f"  ✓ {model_name} forecast generated")
 
             except Exception as e:
+                import traceback
                 self.logger.error(f"  ✗ {model_name} forecast failed: {e}")
+                self.logger.error(traceback.format_exc())
 
         # Evaluate forecasts
         self.logger.info("Evaluating forecasts...")
