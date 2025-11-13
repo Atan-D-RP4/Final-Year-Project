@@ -2,7 +2,6 @@
 
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Optional
 
 import yaml
 
@@ -11,7 +10,7 @@ import yaml
 class DataConfig:
     """Configuration for data sources and processing."""
 
-    fred_api_key: Optional[str] = None
+    fred_api_key: str | None = None
     start_date: str = "2010-01-01"
     end_date: str = "2024-12-31"
 
@@ -179,7 +178,7 @@ class ExperimentConfig:
     deterministic: bool = True
 
 
-def load_config(config_path: Optional[str] = None) -> ExperimentConfig:
+def load_config(config_path: str | None = None) -> ExperimentConfig:
     """Load configuration from file or use defaults.
 
     Args:

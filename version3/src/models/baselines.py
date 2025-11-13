@@ -1,43 +1,41 @@
 """Baseline forecasting models for financial time series."""
 
 from abc import ABC, abstractmethod
-from typing import Optional
+from typing import Any, Optional
 
 import numpy as np
 import pandas as pd
+import torch
+import torch.nn as nn
 from sklearn.linear_model import LinearRegression
 from sklearn.preprocessing import StandardScaler
 from statsmodels.tsa.arima.model import ARIMA
 from statsmodels.tsa.statespace.varmax import VARMAX
-from statsmodels.tsa.seasonal import seasonal_decompose
-
-import torch
-import torch.nn as nn
 
 
 def _extract_target_column(data: pd.DataFrame, target_col: str) -> np.ndarray:
     """Extract target column properly handling MultiIndex columns."""
     if isinstance(data.columns, pd.MultiIndex):
         # Try (Ticker, Price) format first
-        if (target_col, 'Close') in data.columns:
-            return data[(target_col, 'Close')].values
-        elif (target_col, 'Adj Close') in data.columns:
-            return data[(target_col, 'Adj Close')].values
-        
+        if (target_col, "Close") in data.columns:
+            return data[(target_col, "Close")].to_numpy()
+        elif (target_col, "Adj Close") in data.columns:
+            return data[(target_col, "Adj Close")].to_numpy()
+
         # Try (Price, Ticker) format (yfinance default)
-        elif ('Close', target_col) in data.columns:
-            return data[('Close', target_col)].values
-        elif ('Adj Close', target_col) in data.columns:
-            return data[('Adj Close', target_col)].values
-        
+        elif ("Close", target_col) in data.columns:
+            return data[("Close", target_col)].to_numpy()
+        elif ("Adj Close", target_col) in data.columns:
+            return data[("Adj Close", target_col)].to_numpy()
+
         else:
             # Find any column with the target symbol
             for col in data.columns:
-                if target_col in str(col) and 'Close' in str(col):
-                    return data[col].values
+                if target_col in str(col) and "Close" in str(col):
+                    return data[col].to_numpy()
             raise ValueError(f"Could not find Close price column for {target_col}")
     else:
-        return data[target_col].values
+        return data[target_col].to_numpy()
 
 
 class BaselineForecaster(ABC):
@@ -122,7 +120,7 @@ class SeasonalNaiveForecaster(BaselineForecaster):
             daily trading days)
         """
         self.seasonal_period = seasonal_period
-        self.seasonal_values = None
+        self.seasonal_values: Optional[np.ndarray] = None
 
     def fit(
         self,
@@ -136,9 +134,7 @@ class SeasonalNaiveForecaster(BaselineForecaster):
             target_col: Target column name
         """
         target_values = _extract_target_column(train_data, target_col)
-        self.seasonal_values = target_values[
-            -self.seasonal_period :
-        ]
+        self.seasonal_values = target_values[-self.seasonal_period :].copy()
 
     def forecast(
         self,
@@ -172,7 +168,7 @@ class MeanForecaster(BaselineForecaster):
 
     def __init__(self):
         """Initialize mean forecaster."""
-        self.mean = None
+        self.mean: Optional[float] = None
 
     def fit(
         self,
@@ -185,7 +181,11 @@ class MeanForecaster(BaselineForecaster):
             train_data: Training DataFrame
             target_col: Target column name
         """
-        self.mean = train_data[target_col].mean()
+        mean_val = train_data[target_col].mean()
+        if isinstance(mean_val, (int, float)):
+            self.mean = float(mean_val)
+        else:
+            self.mean = None
 
     def forecast(
         self,
@@ -218,7 +218,7 @@ class ARIMAForecaster(BaselineForecaster):
             order: ARIMA order (p, d, q)
         """
         self.order = order
-        self.model = None
+        self.model: Optional[Any] = None
 
     def fit(
         self,
@@ -233,9 +233,7 @@ class ARIMAForecaster(BaselineForecaster):
         """
         try:
             target_values = _extract_target_column(train_data, target_col)
-            self.model = ARIMA(
-                target_values, order=self.order
-            ).fit()
+            self.model = ARIMA(target_values, order=self.order).fit()
         except Exception as e:
             print(f"Warning: ARIMA fit failed: {e}")
             self.model = None
@@ -261,7 +259,7 @@ class ARIMAForecaster(BaselineForecaster):
 
         try:
             result = self.model.get_forecast(steps=horizon)
-            return result.predicted_mean.values
+            return result.predicted_mean.to_numpy()
         except Exception as e:
             print(f"Warning: ARIMA forecast failed: {e}")
             return np.zeros(horizon)
@@ -277,7 +275,7 @@ class VARForecaster(BaselineForecaster):
             lags: Number of lags to use
         """
         self.lags = lags
-        self.model = None
+        self.model: Optional[Any] = None
 
     def fit(
         self,
@@ -292,16 +290,12 @@ class VARForecaster(BaselineForecaster):
         """
         try:
             # Use all numeric columns for multivariate forecasting
-            numeric_cols = train_data.select_dtypes(
-                include=[np.number]
-            ).columns.tolist()
+            numeric_cols = train_data.select_dtypes(include=[np.number]).columns.tolist()
             if not numeric_cols:
                 self.model = None
                 return
 
-            self.model = VARMAX(
-                train_data[numeric_cols], order=(self.lags, 0)
-            ).fit(disp=False)
+            self.model = VARMAX(train_data[numeric_cols], order=(self.lags, 0)).fit(disp=False)
         except Exception as e:
             print(f"Warning: VAR fit failed: {e}")
             self.model = None
@@ -331,9 +325,9 @@ class VARForecaster(BaselineForecaster):
 
             # Extract target column
             if target_col in forecast_data.columns:
-                return forecast_data[target_col].values
+                return forecast_data[target_col].to_numpy()
             else:
-                return forecast_data.iloc[:, 0].values
+                return forecast_data.iloc[:, 0].to_numpy()
         except Exception as e:
             print(f"Warning: VAR forecast failed: {e}")
             return np.zeros(horizon)
@@ -351,7 +345,7 @@ class LinearRegressionForecaster(BaselineForecaster):
         """
         self.lags = lags
         self.horizon = horizon
-        self.model = None
+        self.model: Optional[LinearRegression] = None
         self.scaler = StandardScaler()
 
     def fit(
@@ -411,7 +405,7 @@ class LinearRegressionForecaster(BaselineForecaster):
         target = _extract_target_column(test_data, target_col)
         forecasts = []
 
-        for h in range(horizon):
+        for _h in range(horizon):
             if len(target) < self.lags:
                 forecasts.append(target[-1])
                 continue
@@ -455,7 +449,7 @@ class LSTMForecaster(BaselineForecaster):
         self.num_layers = num_layers
         self.dropout = dropout
         self.device = device
-        self.model = None
+        self.model: Optional[nn.Module] = None
         self.scaler = StandardScaler()
 
     def _build_model(self, input_size: int = 1) -> nn.Module:
@@ -467,6 +461,7 @@ class LSTMForecaster(BaselineForecaster):
         Returns:
             LSTM model
         """
+
         class LSTMModel(nn.Module):
             """LSTM model for time series forecasting."""
 
@@ -495,9 +490,7 @@ class LSTMForecaster(BaselineForecaster):
                 pred = self.fc(last_out)
                 return pred
 
-        return LSTMModel(
-            input_size, self.hidden_size, self.num_layers, self.dropout
-        )
+        return LSTMModel(input_size, self.hidden_size, self.num_layers, self.dropout)
 
     def fit(
         self,
@@ -541,9 +534,7 @@ class LSTMForecaster(BaselineForecaster):
         self.model.to(self.device)
 
         # Training
-        optimizer = torch.optim.Adam(
-            self.model.parameters(), lr=learning_rate
-        )
+        optimizer = torch.optim.Adam(self.model.parameters(), lr=learning_rate)
         criterion = nn.MSELoss()
 
         for epoch in range(epochs):
@@ -564,10 +555,7 @@ class LSTMForecaster(BaselineForecaster):
                 epoch_loss += loss.item()
 
             if (epoch + 1) % 10 == 0:
-                print(
-                    f"Epoch {epoch + 1}/{epochs}, "
-                    f"Loss: {epoch_loss / len(X_train):.4f}"
-                )
+                print(f"Epoch {epoch + 1}/{epochs}, Loss: {epoch_loss / len(X_train):.4f}")
 
     def forecast(
         self,
@@ -591,6 +579,10 @@ class LSTMForecaster(BaselineForecaster):
         target = _extract_target_column(test_data, target_col).reshape(-1, 1)
         target_scaled = self.scaler.transform(target)
 
+        # Ensure target_scaled is a 2D ndarray
+        if not isinstance(target_scaled, np.ndarray):
+            target_scaled = np.array(target_scaled)
+
         self.model.eval()
         forecasts = []
 
@@ -607,9 +599,7 @@ class LSTMForecaster(BaselineForecaster):
 
         # Inverse scale
         forecasts_array = np.array(forecasts).reshape(-1, 1)
-        forecasts_original = self.scaler.inverse_transform(
-            forecasts_array
-        ).flatten()
+        forecasts_original = self.scaler.inverse_transform(forecasts_array).flatten()
 
         return forecasts_original
 
@@ -624,7 +614,7 @@ class ExponentialSmoothingForecaster(BaselineForecaster):
             smoothing_level: Smoothing parameter (0 to 1)
         """
         self.smoothing_level = smoothing_level
-        self.last_level = None
+        self.last_level: Optional[float] = None
 
     def fit(
         self,
@@ -641,10 +631,7 @@ class ExponentialSmoothingForecaster(BaselineForecaster):
         level = target[0]
 
         for val in target[1:]:
-            level = (
-                self.smoothing_level * val
-                + (1 - self.smoothing_level) * level
-            )
+            level = self.smoothing_level * val + (1 - self.smoothing_level) * level
 
         self.last_level = level
 
@@ -673,7 +660,7 @@ class ExponentialSmoothingForecaster(BaselineForecaster):
 class EnsembleForecaster(BaselineForecaster):
     """Ensemble of baseline forecasters."""
 
-    def __init__(self, forecasters: Optional[list] = None):
+    def __init__(self, forecasters: list | None = None):
         """Initialize ensemble.
 
         Args:

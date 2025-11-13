@@ -1,7 +1,5 @@
 """Tokenization strategies for converting numerical data to tokens."""
 
-from typing import Optional
-
 import numpy as np
 import pandas as pd
 from sklearn.cluster import KMeans
@@ -42,27 +40,32 @@ class FinancialDataTokenizer:
             if len(col_data) == 0:
                 continue
 
+            # Ensure col_data is a numpy array
+            if not isinstance(col_data, np.ndarray):
+                col_data = np.array(col_data)
+
+            # Convert to float array for safe operations
+            col_data_float = col_data.astype(np.float64)
+
             self.column_stats[col] = {
-                "min": col_data.min(),
-                "max": col_data.max(),
-                "mean": col_data.mean(),
-                "std": col_data.std(),
+                "min": float(col_data_float.min()),
+                "max": float(col_data_float.max()),
+                "mean": float(col_data_float.mean()),
+                "std": float(col_data_float.std()),
             }
 
             if self.method == "uniform":
-                self._fit_uniform(col, col_data)
+                self._fit_uniform(col, col_data_float)
             elif self.method == "quantile":
-                self._fit_quantile(col, col_data)
+                self._fit_quantile(col, col_data_float)
             elif self.method == "kmeans":
-                self._fit_kmeans(col, col_data)
+                self._fit_kmeans(col, col_data_float)
 
     def _fit_uniform(self, col: str, data: np.ndarray) -> None:
         """Fit uniform binning."""
         min_val = data.min()
         max_val = data.max()
-        self.bin_edges[col] = np.linspace(
-            min_val, max_val, self.num_bins + 1
-        )
+        self.bin_edges[col] = np.linspace(min_val, max_val, self.num_bins + 1)
 
     def _fit_quantile(self, col: str, data: np.ndarray) -> None:
         """Fit quantile binning."""
@@ -94,17 +97,17 @@ class FinancialDataTokenizer:
 
             col_data = data[col].values
 
-            if self.method == "kmeans":
-                token_indices = self.kmeans_models[col].predict(
-                    col_data.reshape(-1, 1)
-                )
+            # Convert to numpy array if it's an ExtensionArray
+            if not isinstance(col_data, np.ndarray):
+                col_data = np.array(col_data, dtype=np.float64)
             else:
-                token_indices = np.digitize(
-                    col_data, self.bin_edges[col]
-                ) - 1
-                token_indices = np.clip(
-                    token_indices, 0, self.num_bins - 1
-                )
+                col_data = col_data.astype(np.float64)
+
+            if self.method == "kmeans":
+                token_indices = self.kmeans_models[col].predict(col_data.reshape(-1, 1))
+            else:
+                token_indices = np.digitize(col_data, self.bin_edges[col]) - 1
+                token_indices = np.clip(token_indices, 0, self.num_bins - 1)
 
             tokens[col] = token_indices
 
@@ -204,22 +207,22 @@ class AdvancedTokenizer(FinancialDataTokenizer):
 
         # Collect all new columns to add at once for better performance
         new_cols = {}
-        
+
         for col in close_cols:
             if col not in result.columns:
                 continue
 
             # Simple moving averages
             for window in [5, 20, 50]:
-                new_cols[f"{col}_SMA_{window}"] = (
-                    result[col].rolling(window).mean()
-                )
+                new_cols[f"{col}_SMA_{window}"] = result[col].rolling(window).mean()
 
             # RSI (Relative Strength Index)
             delta = result[col].diff()
             gain = (delta.where(delta > 0, 0)).rolling(window=14).mean()
             loss = (-delta.where(delta < 0, 0)).rolling(window=14).mean()
-            rs = gain / loss.replace(0, 1e-10)
+            # Handle division by zero safely
+            loss_safe = loss.where(loss != 0, 1e-10)
+            rs = gain / loss_safe
             new_cols[f"{col}_RSI"] = 100 - (100 / (1 + rs))
 
         # Add all new columns at once to avoid fragmentation
@@ -247,7 +250,7 @@ class AdvancedTokenizer(FinancialDataTokenizer):
             result.index = pd.to_datetime(result.index)
 
         # Day of week
-        result["day_of_week"] = result.index.dayofweek
+        result["day_of_week"] = result.index.day_of_week
 
         # Month
         result["month"] = result.index.month
@@ -256,9 +259,7 @@ class AdvancedTokenizer(FinancialDataTokenizer):
         result["quarter"] = result.index.quarter
 
         # Days since epoch
-        result["days_since_epoch"] = (
-            result.index - pd.Timestamp("1970-01-01")
-        ).days
+        result["days_since_epoch"] = (result.index - pd.Timestamp("1970-01-01")).days
 
         return result
 
