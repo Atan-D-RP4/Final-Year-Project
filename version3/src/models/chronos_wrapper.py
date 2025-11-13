@@ -1,14 +1,14 @@
 """Chronos wrapper for financial forecasting with AutoGluon."""
 
 from pathlib import Path
-from typing import cast
+from typing import Optional
 
 import numpy as np
 import pandas as pd
 import torch
 from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
 
-from src.preprocessing.tokenizer import AdvancedTokenizer
+from src.preprocessing.tokenizer import AdvancedTokenizer, FinancialDataTokenizer
 
 
 class ChronosFinancialForecaster:
@@ -39,7 +39,7 @@ class ChronosFinancialForecaster:
 
         self.model = None
         self.tokenizer_model = None
-        self.tokenizer_data: AdvancedTokenizer | None = None
+        self.tokenizer_data = None
         self.model_loaded = False
 
     def _get_device(self, device: str) -> str:
@@ -81,7 +81,7 @@ class ChronosFinancialForecaster:
         self,
         train_data: pd.DataFrame,
         target_col: str,
-        tokenizer_config: dict | None = None,
+        tokenizer_config: Optional[dict] = None,
     ) -> None:
         """Fit tokenizer on training data.
 
@@ -106,7 +106,7 @@ class ChronosFinancialForecaster:
         test_data: pd.DataFrame,
         target_col: str,
         num_samples: int = 100,
-    ) -> dict[str, np.ndarray | dict]:
+    ) -> dict[str, np.ndarray]:
         """Generate zero-shot forecasts.
 
         Args:
@@ -146,25 +146,6 @@ class ChronosFinancialForecaster:
         
         target_series = target_df.to_numpy().flatten()
 
-<<<<<<< HEAD
-        # Tokenize - ensure we pass DataFrame
-        target_df = cast(pd.DataFrame, test_data[[target_col]])
-        tokens_dict = self.tokenizer_data.transform(target_df)
-        # Ensure tokens_dict is a dict with proper extraction
-        if isinstance(tokens_dict, dict):
-            tokens = tokens_dict[target_col]
-        else:
-            # If transform returns DataFrame/Series, convert to numpy
-            tokens = (
-                tokens_dict.values.flatten()
-                if hasattr(tokens_dict, "values")
-                else tokens_dict.flatten()
-            )
-||||||| 010ce33
-        # Tokenize
-        tokens_dict = self.tokenizer_data.transform(test_data[[target_col]])
-        tokens = tokens_dict[target_col]
-=======
         # Tokenize
         tokens_dict = self.tokenizer_data.transform(target_df)
         # Handle dict keys - might be column name or tuple for multi-index
@@ -175,7 +156,6 @@ class ChronosFinancialForecaster:
             tokens = list(tokens_dict.values())[0]
         else:
             raise ValueError(f"Tokenizer returned empty dict for column '{target_col}'. Dict keys: {list(tokens_dict.keys())}")
->>>>>>> origin/main
 
         # Use context window
         context_tokens = tokens[-self.context_length :]
@@ -245,7 +225,7 @@ class ChronosFinancialForecaster:
         self,
         train_data: pd.DataFrame,
         target_col: str,
-        val_data: pd.DataFrame | None = None,
+        val_data: Optional[pd.DataFrame] = None,
         epochs: int = 5,
         learning_rate: float = 1e-5,
         batch_size: int = 32,
@@ -270,11 +250,8 @@ class ChronosFinancialForecaster:
             print("Skipping fine-tuning: model not loaded")
             return {"message": "Model not loaded, skipping fine-tuning"}
 
-        if self.tokenizer_data is None:
-            print("Skipping fine-tuning: tokenizer not initialized")
-            return {"message": "Tokenizer not initialized, skipping fine-tuning"}
-
         # Prepare data
+        target_series = train_data[[target_col]].values
         tokens_dict = self.tokenizer_data.transform(train_data[[target_col]])
         tokens = tokens_dict[target_col]
 
@@ -299,12 +276,12 @@ class ChronosFinancialForecaster:
 
         for epoch in range(epochs):
             epoch_loss = 0.0
-            for seq, _target in sequences:
+            for seq, target in sequences:
                 seq_tensor = torch.tensor(seq, dtype=torch.long, device=self.device)
 
                 # Forward pass
-                with torch.cuda.amp.autocast(enabled=self.mixed_precision):  # type: ignore
-                    self.model(input_ids=seq_tensor)
+                with torch.cuda.amp.autocast(enabled=self.mixed_precision):
+                    outputs = self.model(input_ids=seq_tensor)
                     # Mock loss computation
                     loss = torch.tensor(0.1, device=self.device)
 
@@ -385,7 +362,7 @@ class ChronosFinancialForecaster:
         self,
         test_data: pd.DataFrame,
         target_col: str,
-        metrics: list[str] | None = None,
+        metrics: Optional[list[str]] = None,
     ) -> dict:
         """Evaluate model on test data.
 
@@ -407,15 +384,12 @@ class ChronosFinancialForecaster:
         pred = forecasts["median"]
 
         # Get actual values
-        actual_df = test_data[[target_col]]
-        actual = np.asarray(actual_df).flatten()[-len(pred) :]
+        actual = test_data[[target_col]].values.flatten()[-len(pred) :]
 
         # Calculate metrics
-        # Extract median from dict if forecast_zero_shot returns dict
-        pred_array = pred["median"] if isinstance(pred, dict) else pred
         results = calculate_all_metrics(
             actual,
-            pred_array,
+            pred,
             metrics=metrics,
         )
 
@@ -455,7 +429,7 @@ class ChronosFineTuner:
         self.model = None
         self.pipeline = None  # Chronos pipeline
         self.tokenizer_model = None
-        self.tokenizer_data: AdvancedTokenizer | None = None
+        self.tokenizer_data = None
         self.model_loaded = False
 
     def _get_device(self, device: str) -> str:
@@ -514,7 +488,7 @@ class ChronosFineTuner:
             lora_dropout: LoRA dropout rate
         """
         try:
-            from peft import LoraConfig, TaskType, get_peft_model
+            from peft import get_peft_model, LoraConfig, TaskType
 
             if self.model is None or self.pipeline is None:
                 print("Model not loaded, skipping PEFT setup")
@@ -531,19 +505,12 @@ class ChronosFineTuner:
                 target_modules=["q", "v"],  # T5 attention modules
             )
 
-<<<<<<< HEAD
-            peft_model = get_peft_model(cast(AutoModelForSeq2SeqLM, self.model), peft_config)  # type: ignore
-            self.model = peft_model  # type: ignore
-||||||| 010ce33
-            self.model = get_peft_model(self.model, peft_config)
-=======
             # Apply PEFT to the inner T5 model
             peft_model = get_peft_model(inner_model, peft_config)
             
             # Replace the inner model with the PEFT-wrapped version
             self.model.model = peft_model
             
->>>>>>> origin/main
             print(f"PEFT adapter ({adapter_type}) configured successfully")
         except ImportError:
             print("Warning: PEFT library not available, skipping adapter setup")
@@ -553,9 +520,9 @@ class ChronosFineTuner:
     def prepare_data(
         self,
         train_data: pd.DataFrame,
-        val_data: pd.DataFrame | None,
+        val_data: Optional[pd.DataFrame],
         target_col: str,
-        tokenizer_config: dict | None = None,
+        tokenizer_config: Optional[dict] = None,
     ) -> tuple:
         """Prepare training and validation data.
 
@@ -582,9 +549,7 @@ class ChronosFineTuner:
 
         # Transform data
         train_tokens = self.tokenizer_data.transform(train_data[[target_col]])
-        val_tokens = (
-            self.tokenizer_data.transform(val_data[[target_col]]) if val_data is not None else None
-        )
+        val_tokens = self.tokenizer_data.transform(val_data[[target_col]]) if val_data is not None else None
 
         return train_tokens, val_tokens
 
@@ -596,7 +561,7 @@ class ChronosFineTuner:
         epochs: int = 5,
         learning_rate: float = 1e-5,
         batch_size: int = 32,
-        save_path: str | None = None,
+        save_path: Optional[str] = None,
     ) -> dict:
         """Fine-tune Chronos model.
 
@@ -632,7 +597,7 @@ class ChronosFineTuner:
         print("Fine-tuning completed")
         return history
 
-    def _mock_fine_tune(self, save_path: str | None = None) -> dict:
+    def _mock_fine_tune(self, save_path: Optional[str] = None) -> dict:
         """Mock fine-tuning for testing."""
         print("Running mock fine-tuning...")
         history = {"loss": [0.8, 0.6, 0.4, 0.3, 0.2]}
@@ -706,15 +671,6 @@ class ChronosFineTuner:
         import json
         model_path_obj = Path(model_path)
 
-<<<<<<< HEAD
-        # Load model
-        if (model_path_obj / "pytorch_model.bin").exists() or (
-            model_path_obj / "model.safetensors"
-        ).exists():
-||||||| 010ce33
-        # Load model
-        if (model_path_obj / "pytorch_model.bin").exists() or (model_path_obj / "model.safetensors").exists():
-=======
         # Check if this is a PEFT adapter model
         model_config_path = model_path_obj / "model_config.json"
         adapter_path = model_path_obj / "adapter"
@@ -750,7 +706,6 @@ class ChronosFineTuner:
                 
         elif (model_path_obj / "pytorch_model.bin").exists() or (model_path_obj / "model.safetensors").exists():
             # Legacy: full model checkpoint
->>>>>>> origin/main
             try:
                 self.model = AutoModelForSeq2SeqLM.from_pretrained(
                     str(model_path_obj),
@@ -797,9 +752,7 @@ class ChronosFineTuner:
             Dictionary with forecasts
         """
         if self.tokenizer_data is None:
-            raise ValueError(
-                "Tokenizer not loaded. Call prepare_data() or load_fine_tuned_model() first."
-            )
+            raise ValueError("Tokenizer not loaded. Call prepare_data() or load_fine_tuned_model() first.")
 
         # Extract target series - handle both regular and multi-index columns
         # For MultiIndex, we need to search for the column to avoid selecting multiple columns
@@ -827,13 +780,6 @@ class ChronosFineTuner:
         
         target_series = target_df.to_numpy().flatten()
 
-<<<<<<< HEAD
-        # Tokenize (for future expansion)
-||||||| 010ce33
-        # Tokenize
-        tokens_dict = self.tokenizer_data.transform(test_data[[target_col]])
-        tokens = tokens_dict[target_col]
-=======
         # Tokenize
         tokens_dict = self.tokenizer_data.transform(target_df)
         # Handle dict keys - might be column name or tuple for multi-index
@@ -844,10 +790,9 @@ class ChronosFineTuner:
             tokens = list(tokens_dict.values())[0]
         else:
             raise ValueError(f"Tokenizer returned empty dict for column '{target_col}'. Dict keys: {list(tokens_dict.keys())}")
->>>>>>> origin/main
 
-        # Use context window (for future expansion)
-        # context_tokens = tokens[-self.context_length :]
+        # Use context window
+        context_tokens = tokens[-self.context_length :]
 
         # Generate forecasts (mock for now)
         forecasts = self._mock_forecast(target_series, num_samples)
