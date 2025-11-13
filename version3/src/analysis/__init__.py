@@ -339,6 +339,12 @@ class AttributionAnalyzer:
             )
 
         X_array = X.values if hasattr(X, "values") else X
+        # Ensure X_array is an ndarray
+        if isinstance(X_array, pd.DataFrame):
+            X_array = X_array.to_numpy()
+        elif not isinstance(X_array, np.ndarray):
+            X_array = np.asarray(X_array)
+
         results = {}
 
         if "ablation" in methods:

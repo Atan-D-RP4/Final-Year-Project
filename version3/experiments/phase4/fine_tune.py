@@ -3,7 +3,7 @@
 import json
 from datetime import datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import numpy as np
 import pandas as pd
@@ -128,6 +128,10 @@ class Phase4Experiment:
             fetcher = YahooFinanceFetcher()
             data = fetcher.fetch_data([target_symbol], "2010-01-01", "2024-12-31")
 
+            if data is None:
+                self.logger.error("Failed to fetch data")
+                raise ValueError("Could not fetch data for preprocessing")
+
             # Clean data
             cleaner = DataCleaner()
             data = cleaner.clean_market_data(data)
@@ -176,9 +180,9 @@ class Phase4Experiment:
         n_train = int(0.7 * n_total)
         n_val = int(0.15 * n_total)
 
-        train_data = data[:n_train]
-        val_data = data[n_train : n_train + n_val]
-        test_data = data[n_train + n_val :]
+        train_data = cast(pd.DataFrame, data[:n_train])
+        val_data = cast(pd.DataFrame, data[n_train : n_train + n_val])
+        test_data = cast(pd.DataFrame, data[n_train + n_val :])
 
         self.logger.info(
             f"Data split: Train {len(train_data)}, Val {len(val_data)}, Test {len(test_data)}"

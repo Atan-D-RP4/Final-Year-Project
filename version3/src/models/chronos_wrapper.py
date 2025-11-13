@@ -1,6 +1,7 @@
 """Chronos wrapper for financial forecasting with AutoGluon."""
 
 from pathlib import Path
+from typing import cast
 
 import numpy as np
 import pandas as pd
@@ -38,7 +39,7 @@ class ChronosFinancialForecaster:
 
         self.model = None
         self.tokenizer_model = None
-        self.tokenizer_data = None
+        self.tokenizer_data: AdvancedTokenizer | None = None
         self.model_loaded = False
 
     def _get_device(self, device: str) -> str:
@@ -105,7 +106,7 @@ class ChronosFinancialForecaster:
         test_data: pd.DataFrame,
         target_col: str,
         num_samples: int = 100,
-    ) -> dict[str, np.ndarray]:
+    ) -> dict[str, np.ndarray | dict]:
         """Generate zero-shot forecasts.
 
         Args:
@@ -122,9 +123,19 @@ class ChronosFinancialForecaster:
         # Extract target series
         target_series = test_data[[target_col]].to_numpy().flatten()
 
-        # Tokenize
-        tokens_dict = self.tokenizer_data.transform(test_data[[target_col]])
-        tokens = tokens_dict[target_col]
+        # Tokenize - ensure we pass DataFrame
+        target_df = cast(pd.DataFrame, test_data[[target_col]])
+        tokens_dict = self.tokenizer_data.transform(target_df)
+        # Ensure tokens_dict is a dict with proper extraction
+        if isinstance(tokens_dict, dict):
+            tokens = tokens_dict[target_col]
+        else:
+            # If transform returns DataFrame/Series, convert to numpy
+            tokens = (
+                tokens_dict.values.flatten()
+                if hasattr(tokens_dict, "values")
+                else tokens_dict.flatten()
+            )
 
         # Use context window
         context_tokens = tokens[-self.context_length :]
@@ -219,6 +230,10 @@ class ChronosFinancialForecaster:
             print("Skipping fine-tuning: model not loaded")
             return {"message": "Model not loaded, skipping fine-tuning"}
 
+        if self.tokenizer_data is None:
+            print("Skipping fine-tuning: tokenizer not initialized")
+            return {"message": "Tokenizer not initialized, skipping fine-tuning"}
+
         # Prepare data
         tokens_dict = self.tokenizer_data.transform(train_data[[target_col]])
         tokens = tokens_dict[target_col]
@@ -248,7 +263,7 @@ class ChronosFinancialForecaster:
                 seq_tensor = torch.tensor(seq, dtype=torch.long, device=self.device)
 
                 # Forward pass
-                with torch.cuda.amp.autocast(enabled=self.mixed_precision):
+                with torch.cuda.amp.autocast(enabled=self.mixed_precision):  # type: ignore
                     self.model(input_ids=seq_tensor)
                     # Mock loss computation
                     loss = torch.tensor(0.1, device=self.device)
@@ -352,12 +367,15 @@ class ChronosFinancialForecaster:
         pred = forecasts["median"]
 
         # Get actual values
-        actual = test_data[[target_col]].values.flatten()[-len(pred) :]
+        actual_df = test_data[[target_col]]
+        actual = np.asarray(actual_df).flatten()[-len(pred) :]
 
         # Calculate metrics
+        # Extract median from dict if forecast_zero_shot returns dict
+        pred_array = pred["median"] if isinstance(pred, dict) else pred
         results = calculate_all_metrics(
             actual,
-            pred,
+            pred_array,
             metrics=metrics,
         )
 
@@ -396,7 +414,7 @@ class ChronosFineTuner:
 
         self.model = None
         self.tokenizer_model = None
-        self.tokenizer_data = None
+        self.tokenizer_data: AdvancedTokenizer | None = None
         self.model_loaded = False
 
     def _get_device(self, device: str) -> str:
@@ -461,7 +479,8 @@ class ChronosFineTuner:
                 target_modules=["q", "v"],  # T5 attention modules
             )
 
-            self.model = get_peft_model(self.model, peft_config)
+            peft_model = get_peft_model(cast(AutoModelForSeq2SeqLM, self.model), peft_config)  # type: ignore
+            self.model = peft_model  # type: ignore
             print(f"PEFT adapter ({adapter_type}) configured successfully")
         except ImportError:
             print("Warning: PEFT library not available, skipping adapter setup")

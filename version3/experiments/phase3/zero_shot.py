@@ -2,6 +2,7 @@
 
 from datetime import datetime
 from pathlib import Path
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -146,7 +147,7 @@ class ZeroShotExperiment:
 
         horizon = prediction_length
 
-        results = {
+        results: dict = {
             "timestamp": datetime.now().isoformat(),
             "target_col": target_col,
             "prediction_length": prediction_length,
@@ -170,7 +171,7 @@ class ZeroShotExperiment:
 
     def _initialize_models(
         self, prediction_length: int, fine_tuned_model_path: str | None = None
-    ) -> dict:
+    ) -> dict[str, Any]:
         """Initialize all models for comparison."""
         models = {
             "Naive": NaiveForecaster(),

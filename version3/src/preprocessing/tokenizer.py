@@ -80,16 +80,20 @@ class FinancialDataTokenizer:
         centers = kmeans.cluster_centers_.flatten()
         self.bin_edges[col] = np.sort(centers)
 
-    def transform(self, data: pd.DataFrame) -> dict[str, np.ndarray]:
+    def transform(self, data: pd.DataFrame | pd.Series) -> dict[str, np.ndarray]:
         """Transform data to tokens.
 
         Args:
-            data: Input DataFrame
+            data: Input DataFrame or Series
 
         Returns:
             Dictionary with tokenized data
         """
         tokens = {}
+
+        # Convert Series to DataFrame if needed
+        if isinstance(data, pd.Series):
+            data = pd.DataFrame(data)
 
         for col in data.columns:
             if col not in self.bin_edges:
@@ -206,7 +210,7 @@ class AdvancedTokenizer(FinancialDataTokenizer):
         close_cols = [col for col in data.columns if "Close" in str(col)]
 
         # Collect all new columns to add at once for better performance
-        new_cols = {}
+        new_cols: dict[str, pd.Series] = {}
 
         for col in close_cols:
             if col not in result.columns:
@@ -214,16 +218,25 @@ class AdvancedTokenizer(FinancialDataTokenizer):
 
             # Simple moving averages
             for window in [5, 20, 50]:
-                new_cols[f"{col}_SMA_{window}"] = result[col].rolling(window).mean()
+                sma = result[col].rolling(window).mean()
+                # Ensure SMA is a Series
+                new_cols[f"{col}_SMA_{window}"] = (
+                    sma if isinstance(sma, pd.Series) else pd.Series(sma, index=result.index)
+                )
 
             # RSI (Relative Strength Index)
             delta = result[col].diff()
             gain = (delta.where(delta > 0, 0)).rolling(window=14).mean()
             loss = (-delta.where(delta < 0, 0)).rolling(window=14).mean()
-            # Handle division by zero safely
-            loss_safe = loss.where(loss != 0, 1e-10)
+            # Handle division by zero safely - ensure loss is a Series
+            loss_series = pd.Series(loss) if not isinstance(loss, pd.Series) else loss
+            loss_safe = loss_series.fillna(0).replace(0, 1e-10)
             rs = gain / loss_safe
-            new_cols[f"{col}_RSI"] = 100 - (100 / (1 + rs))
+            # Ensure RSI is a Series
+            rsi = 100 - (100 / (1 + rs))
+            new_cols[f"{col}_RSI"] = (
+                rsi if isinstance(rsi, pd.Series) else pd.Series(rsi, index=result.index)
+            )
 
         # Add all new columns at once to avoid fragmentation
         if new_cols:
@@ -249,14 +262,15 @@ class AdvancedTokenizer(FinancialDataTokenizer):
         if not isinstance(result.index, pd.DatetimeIndex):
             result.index = pd.to_datetime(result.index)
 
-        # Day of week
-        result["day_of_week"] = result.index.day_of_week
+        # Day of week (use .dt accessor via a Series)
+        date_series = pd.Series(result.index)
+        result["day_of_week"] = date_series.dt.day_of_week.values
 
         # Month
-        result["month"] = result.index.month
+        result["month"] = date_series.dt.month.values
 
         # Quarter
-        result["quarter"] = result.index.quarter
+        result["quarter"] = date_series.dt.quarter.values
 
         # Days since epoch
         result["days_since_epoch"] = (result.index - pd.Timestamp("1970-01-01")).days
