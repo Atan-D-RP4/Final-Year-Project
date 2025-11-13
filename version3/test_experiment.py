@@ -7,60 +7,63 @@ from pathlib import Path
 # Add project root to path
 sys.path.append(str(Path(__file__).parent))
 
-def test_experiment_structure():
+
+def test_experiment_structure() -> bool:
     """Test the experiment structure without running full computation."""
-    
+
     print("🧪 Testing Phase 3 Experiment Structure")
     print("=" * 50)
-    
+
     try:
         from experiments.phase3.zero_shot import ZeroShotExperiment
         from src.utils.config import ExperimentConfig
-        
+
         # Test config creation
-        config = ExperimentConfig()
+        ExperimentConfig()
         print("✅ ExperimentConfig created")
-        
+
         # Test experiment creation
         experiment = ZeroShotExperiment()
         print("✅ ZeroShotExperiment created")
-        
+
         # Test that the run method exists
-        if hasattr(experiment, 'run'):
+        if hasattr(experiment, "run"):
             print("✅ ZeroShotExperiment has run method")
         else:
             print("❌ ZeroShotExperiment missing run method")
             return False
-            
+
         print("✅ Experiment structure test passed")
         return True
-        
+
     except Exception as e:
         print(f"❌ Experiment structure test failed: {e}")
         import traceback
+
         traceback.print_exc()
         return False
 
-def test_model_creation():
+
+def test_model_creation() -> bool:
     """Test model creation without training."""
-    
+
     print("\n🤖 Testing Model Creation")
     print("=" * 30)
-    
+
     try:
         from src.models.baselines import (
-            NaiveForecaster, 
-            SeasonalNaiveForecaster,
-            MeanForecaster,
-            ExponentialSmoothingForecaster,
             ARIMAForecaster,
+            EnsembleForecaster,
+            ExponentialSmoothingForecaster,
             LinearRegressionForecaster,
-            VARForecaster,
             LSTMForecaster,
-            EnsembleForecaster
+            MeanForecaster,
+            NaiveForecaster,
+            SeasonalNaiveForecaster,
+            VARForecaster,
         )
         from src.models.chronos_wrapper import ChronosFinancialForecaster
-        
+
         # Test baseline model creation
         models = {
             "Naive": NaiveForecaster(),
@@ -73,70 +76,75 @@ def test_model_creation():
             "LSTM": LSTMForecaster(sequence_length=20, device="cpu"),
             "Ensemble": EnsembleForecaster(),
         }
-        
+
         print(f"✅ Created {len(models)} baseline models")
-        
+
         # Test Chronos model creation
-        chronos = ChronosFinancialForecaster(
+        ChronosFinancialForecaster(
             prediction_length=24,
             device="cpu",
         )
         print("✅ Created ChronosFinancialForecaster")
-        
+
         print("✅ Model creation test passed")
         return True
-        
+
     except Exception as e:
         print(f"❌ Model creation test failed: {e}")
         import traceback
+
         traceback.print_exc()
         return False
 
-def test_evaluation_setup():
+
+def test_evaluation_setup() -> bool:
     """Test evaluation setup."""
-    
+
     print("\n📊 Testing Evaluation Setup")
     print("=" * 35)
-    
+
     try:
         from src.eval.metrics import ForecastEvaluator
-        
-        evaluator = ForecastEvaluator()
+
+        ForecastEvaluator()
         print("✅ Created ForecastEvaluator")
-        
+
         print("✅ Evaluation setup test passed")
         return True
-        
+
     except Exception as e:
         print(f"❌ Evaluation setup test failed: {e}")
         import traceback
+
         traceback.print_exc()
         return False
 
-def main():
+
+def main() -> int:
     """Run all tests."""
-    
+
     tests = [
         test_experiment_structure,
         test_model_creation,
         test_evaluation_setup,
     ]
-    
+
     passed = 0
     total = len(tests)
-    
+
     for test in tests:
         if test():
             passed += 1
-    
+
     print(f"\n📈 Test Results: {passed}/{total} tests passed")
-    
+
     if passed == total:
         print("🎉 All tests passed! Project structure is working correctly.")
         return 0
     else:
         print("⚠️  Some tests failed. Check the errors above.")
         return 1
+
 
 if __name__ == "__main__":
     sys.exit(main())
