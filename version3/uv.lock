@@ -798,6 +798,24 @@ wheels = [
 ]
 
 [[package]]
+name = "chronos-forecasting"
+version = "2.0.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "accelerate" },
+    { name = "boto3" },
+    { name = "einops" },
+    { name = "numpy" },
+    { name = "scikit-learn" },
+    { name = "torch" },
+    { name = "transformers" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/e1/3b/e7333e8c11eb4d9182e2a9cc716effe3026fc6d4339903a55ba296711b6b/chronos_forecasting-2.0.1.tar.gz", hash = "sha256:bfc1e402e5e236518ef42b89be557ef7eceb1f35539c79dd42f08b1a1fb03236", size = 940153, upload-time = "2025-11-06T12:25:30.977Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/7b/5f/25476ca8b6d8fa2dda87f39da8549a3406af5a6f766b17cc5ca821477dc3/chronos_forecasting-2.0.1-py3-none-any.whl", hash = "sha256:3799ee2f3eec0a2489384432443fb93fc750f95674e5e1731aa257d674da113a", size = 67272, upload-time = "2025-11-06T12:25:29.038Z" },
+]
+
+[[package]]
 name = "click"
 version = "8.3.0"
 source = { registry = "https://pypi.org/simple" }
@@ -1290,6 +1308,15 @@ wheels = [
 ]
 
 [[package]]
+name = "einops"
+version = "0.8.1"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/e5/81/df4fbe24dff8ba3934af99044188e20a98ed441ad17a274539b74e82e126/einops-0.8.1.tar.gz", hash = "sha256:de5d960a7a761225532e0f1959e5315ebeafc0cd43394732f103ca44b9837e84", size = 54805, upload-time = "2025-02-09T03:17:00.434Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/87/62/9773de14fe6c45c23649e98b83231fffd7b9892b6cf863251dc2afa73643/einops-0.8.1-py3-none-any.whl", hash = "sha256:919387eb55330f5757c6bea9165c5ff5cfe63a642682ea788a6d472576d81737", size = 64359, upload-time = "2025-02-09T03:17:01.998Z" },
+]
+
+[[package]]
 name = "einx"
 version = "0.3.0"
 source = { registry = "https://pypi.org/simple" }
@@ -1429,6 +1456,7 @@ version = "0.1.0"
 source = { editable = "." }
 dependencies = [
     { name = "accelerate" },
+    { name = "chronos-forecasting" },
     { name = "fredapi" },
     { name = "matplotlib" },
     { name = "numpy" },
@@ -1467,6 +1495,7 @@ dev = [
 requires-dist = [
     { name = "accelerate", specifier = ">=1.11.0" },
     { name = "autogluon", marker = "extra == 'autogluon'", specifier = ">=1.1.0" },
+    { name = "chronos-forecasting", specifier = ">=2.0.1" },
     { name = "fredapi", specifier = ">=0.5.0" },
     { name = "matplotlib", specifier = ">=3.7.0" },
     { name = "numpy", specifier = ">=1.24.0" },

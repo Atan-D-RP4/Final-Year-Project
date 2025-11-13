@@ -70,14 +70,36 @@ class Phase4Experiment:
         # Prepare data - use 'Close' as target column name after data cleaning
         # Note: YahooFinanceFetcher returns MultiIndex columns but after cleaning
         # we use 'Close' as the standard target column name
+        # The tokenizer should be configured to match the data preprocessing
+        tokenizer_config = {
+            "num_bins": 1024,
+            "method": "quantile",
+            "include_technical_indicators": True,  # Must match _setup_data preprocessing
+            "include_time_features": False,  # Set to False as _setup_data doesn't add time features
+        }
         train_data_prepared, val_data_prepared = fine_tuner.prepare_data(
-            train_data, val_data, "Close"
+            train_data, val_data, "Close", tokenizer_config=tokenizer_config
         )
 
         results = {}
 
         # Setup save path for the model
         model_save_path = str(self.results_dir / experiment_name)
+
+        # Check if model already exists and load it for further fine-tuning
+        if self.check_model_exists(model_save_path):
+            self.logger.info(
+                f"Found existing fine-tuned model at {model_save_path}, loading for further fine-tuning"
+            )
+            try:
+                fine_tuner.load_fine_tuned_model(model_save_path)
+                self.logger.info("Successfully loaded existing model for continued fine-tuning")
+            except Exception as e:
+                self.logger.warning(
+                    f"Could not load existing model: {e}. Starting fresh fine-tuning."
+                )
+        else:
+            self.logger.info("No existing model found, starting fresh fine-tuning")
 
         if do_hyperparam_search:
             # Hyperparameter search would go here
@@ -331,6 +353,52 @@ class Phase4Experiment:
         fine_tuner.load_fine_tuned_model(model_path)
         return fine_tuner
 
+    def check_model_exists(self, model_path: str) -> bool:
+        """Check if a fine-tuned model exists at the given path.
+
+        Args:
+            model_path: Path to check for saved model
+
+        Returns:
+            True if model exists, False otherwise
+        """
+        model_path_obj = Path(model_path)
+        # Check for PEFT adapter model
+        if (model_path_obj / "model_config.json").exists() and (
+            model_path_obj / "adapter"
+        ).exists():
+            return True
+        # Check for legacy full model
+        if (model_path_obj / "pytorch_model.bin").exists() or (
+            model_path_obj / "model.safetensors"
+        ).exists():
+            return True
+        # Check for mock model
+        if (model_path_obj / "mock_model" / "README.md").exists():
+            return True
+        return False
+
+    def load_model_for_inference(self, model_path: str) -> ChronosFineTuner:
+        """Load model for inference, falling back to base model if saved model doesn't exist.
+
+        Args:
+            model_path: Path to the saved model
+
+        Returns:
+            Fine-tuner with loaded model
+        """
+        if self.check_model_exists(model_path):
+            self.logger.info(f"Loading saved fine-tuned model from {model_path}")
+            return self.load_fine_tuned_model(model_path)
+        else:
+            self.logger.info(
+                f"No saved model found at {model_path}, using base model for inference"
+            )
+            # Return a fresh fine-tuner with base model loaded
+            fine_tuner = ChronosFineTuner(results_dir=str(self.results_dir))
+            fine_tuner.load_base_model()
+            return fine_tuner
+
 
 def main():
     """Run Phase 4 fine-tuning experiment."""
@@ -343,6 +411,9 @@ def main():
         "--hyperparam-search", action="store_true", help="Perform hyperparameter search"
     )
     parser.add_argument("--results-dir", default="results/phase4", help="Results directory")
+    parser.add_argument(
+        "--inference-only", action="store_true", help="Load existing model and run inference only"
+    )
 
     args = parser.parse_args()
 

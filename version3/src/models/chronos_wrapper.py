@@ -120,9 +120,33 @@ class ChronosFinancialForecaster:
         if self.tokenizer_data is None:
             raise ValueError("Tokenizer not fitted. Call fit() first.")
 
-        # Extract target series
-        target_series = test_data[[target_col]].to_numpy().flatten()
+        # Extract target series - handle both regular and multi-index columns
+        # For MultiIndex, we need to search for the column to avoid selecting multiple columns
+        if isinstance(test_data.columns, pd.MultiIndex):
+            # Find column with target_col in its name
+            matching_cols = [col for col in test_data.columns if target_col in str(col)]
+            if matching_cols:
+                # Get the first match - prefer exact matches or matches with "Close"
+                exact_match = next((col for col in matching_cols if col[-1] == target_col or (isinstance(col, tuple) and target_col in col and 'Close' in str(col))), matching_cols[0])
+                target_df = test_data[[exact_match]]
+                # Flatten the MultiIndex column name to simple string
+                target_df.columns = [target_col]
+            else:
+                raise KeyError(f"Column '{target_col}' not found in DataFrame. Available columns: {list(test_data.columns[:10])}")
+        elif target_col in test_data.columns:
+            # Regular index with exact column match
+            target_df = test_data[[target_col]]
+        else:
+            # Regular index but need to search
+            matching_cols = [col for col in test_data.columns if target_col in str(col)]
+            if matching_cols:
+                target_df = test_data[[matching_cols[0]]]
+            else:
+                raise KeyError(f"Column '{target_col}' not found in DataFrame. Available columns: {list(test_data.columns[:10])}")
+        
+        target_series = target_df.to_numpy().flatten()
 
+<<<<<<< HEAD
         # Tokenize - ensure we pass DataFrame
         target_df = cast(pd.DataFrame, test_data[[target_col]])
         tokens_dict = self.tokenizer_data.transform(target_df)
@@ -136,6 +160,22 @@ class ChronosFinancialForecaster:
                 if hasattr(tokens_dict, "values")
                 else tokens_dict.flatten()
             )
+||||||| 010ce33
+        # Tokenize
+        tokens_dict = self.tokenizer_data.transform(test_data[[target_col]])
+        tokens = tokens_dict[target_col]
+=======
+        # Tokenize
+        tokens_dict = self.tokenizer_data.transform(target_df)
+        # Handle dict keys - might be column name or tuple for multi-index
+        if target_col in tokens_dict:
+            tokens = tokens_dict[target_col]
+        elif len(tokens_dict.values()) > 0:
+            # Get first value from dict
+            tokens = list(tokens_dict.values())[0]
+        else:
+            raise ValueError(f"Tokenizer returned empty dict for column '{target_col}'. Dict keys: {list(tokens_dict.keys())}")
+>>>>>>> origin/main
 
         # Use context window
         context_tokens = tokens[-self.context_length :]
@@ -413,6 +453,7 @@ class ChronosFineTuner:
         self.results_dir.mkdir(parents=True, exist_ok=True)
 
         self.model = None
+        self.pipeline = None  # Chronos pipeline
         self.tokenizer_model = None
         self.tokenizer_data: AdvancedTokenizer | None = None
         self.model_loaded = False
@@ -433,21 +474,29 @@ class ChronosFineTuner:
 
         try:
             print(f"Loading base model {self.model_name}...")
-            self.model = AutoModelForSeq2SeqLM.from_pretrained(
+            
+            # Chronos uses its own pipeline, not standard transformers
+            from chronos import ChronosPipeline
+            
+            self.pipeline = ChronosPipeline.from_pretrained(
                 self.model_name,
                 device_map=self.device,
                 torch_dtype=(torch.bfloat16 if self.mixed_precision else torch.float32),
-                trust_remote_code=True,
             )
-            self.tokenizer_model = AutoTokenizer.from_pretrained(
-                self.model_name,
-                trust_remote_code=True,
-            )
+            
+            # Extract the underlying model for fine-tuning
+            self.model = self.pipeline.model
+            
+            # Chronos doesn't use a traditional tokenizer - it has built-in tokenization
+            # The tokenizer is part of the pipeline
+            self.tokenizer_model = None  # Not used in Chronos
+            
             self.model_loaded = True
             print("Base model loaded successfully")
         except Exception as e:
             print(f"Warning: Could not load model: {e}")
             print("Using mock model for development/testing")
+            self.pipeline = None
 
     def setup_peft_adapter(
         self,
@@ -467,10 +516,13 @@ class ChronosFineTuner:
         try:
             from peft import LoraConfig, TaskType, get_peft_model
 
-            if self.model is None:
+            if self.model is None or self.pipeline is None:
                 print("Model not loaded, skipping PEFT setup")
                 return
 
+            # Chronos wraps a T5 model - we need to apply PEFT to the inner T5 model
+            inner_model = self.model.model  # Get the T5ForConditionalGeneration
+            
             peft_config = LoraConfig(
                 task_type=TaskType.SEQ_2_SEQ_LM,
                 r=r,
@@ -479,8 +531,19 @@ class ChronosFineTuner:
                 target_modules=["q", "v"],  # T5 attention modules
             )
 
+<<<<<<< HEAD
             peft_model = get_peft_model(cast(AutoModelForSeq2SeqLM, self.model), peft_config)  # type: ignore
             self.model = peft_model  # type: ignore
+||||||| 010ce33
+            self.model = get_peft_model(self.model, peft_config)
+=======
+            # Apply PEFT to the inner T5 model
+            peft_model = get_peft_model(inner_model, peft_config)
+            
+            # Replace the inner model with the PEFT-wrapped version
+            self.model.model = peft_model
+            
+>>>>>>> origin/main
             print(f"PEFT adapter ({adapter_type}) configured successfully")
         except ImportError:
             print("Warning: PEFT library not available, skipping adapter setup")
@@ -583,15 +646,36 @@ class ChronosFineTuner:
         return history
 
     def save_model(self, path: str) -> None:
-        """Save fine-tuned model."""
+        """Save fine-tuned model (PEFT adapters + base model reference)."""
         save_path = Path(path)
         save_path.mkdir(parents=True, exist_ok=True)
 
         if self.model is not None and self.model_loaded:
             try:
-                self.model.save_pretrained(str(save_path))
-                if self.tokenizer_model:
-                    self.tokenizer_model.save_pretrained(str(save_path))
+                # For Chronos models with PEFT, save the adapter weights
+                # The inner T5 model should have the PEFT wrapper
+                if hasattr(self.model, 'model') and hasattr(self.model.model, 'save_pretrained'):
+                    # This is a PEFT model - save the adapter
+                    adapter_path = save_path / "adapter"
+                    adapter_path.mkdir(exist_ok=True)
+                    self.model.model.save_pretrained(str(adapter_path))
+                    
+                    # Save a reference to the base model
+                    import json
+                    config = {
+                        "base_model": self.model_name,
+                        "model_type": "chronos_lora",
+                        "prediction_length": self.prediction_length,
+                        "context_length": self.context_length,
+                    }
+                    with open(save_path / "model_config.json", "w") as f:
+                        json.dump(config, f, indent=2)
+                    
+                    print(f"PEFT adapter saved to {adapter_path}")
+                else:
+                    # Fallback - try to save the whole model
+                    self.model.save_pretrained(str(save_path))
+                    
             except Exception as e:
                 print(f"Warning: Could not save model: {e}")
 
@@ -607,6 +691,9 @@ class ChronosFineTuner:
                 "column_stats": self.tokenizer_data.column_stats,
                 "method": self.tokenizer_data.method,
                 "num_bins": self.tokenizer_data.num_bins,
+                "include_technical_indicators": getattr(self.tokenizer_data, "include_technical_indicators", False),
+                "include_time_features": getattr(self.tokenizer_data, "include_time_features", False),
+                "fitted_columns": list(self.tokenizer_data.bin_edges.keys()),  # Save which columns were fitted
             }
 
             with open(tokenizer_dir / "tokenizer_config.pkl", "wb") as f:
@@ -615,13 +702,55 @@ class ChronosFineTuner:
         print(f"Model saved to {path}")
 
     def load_fine_tuned_model(self, model_path: str) -> None:
-        """Load fine-tuned model from disk."""
+        """Load fine-tuned model from disk (handles both full models and PEFT adapters)."""
+        import json
         model_path_obj = Path(model_path)
 
+<<<<<<< HEAD
         # Load model
         if (model_path_obj / "pytorch_model.bin").exists() or (
             model_path_obj / "model.safetensors"
         ).exists():
+||||||| 010ce33
+        # Load model
+        if (model_path_obj / "pytorch_model.bin").exists() or (model_path_obj / "model.safetensors").exists():
+=======
+        # Check if this is a PEFT adapter model
+        model_config_path = model_path_obj / "model_config.json"
+        adapter_path = model_path_obj / "adapter"
+        
+        if model_config_path.exists() and adapter_path.exists():
+            # This is a Chronos model with PEFT adapter
+            try:
+                with open(model_config_path, "r") as f:
+                    config = json.load(f)
+                
+                # Load the base Chronos model first
+                from chronos import ChronosPipeline
+                self.pipeline = ChronosPipeline.from_pretrained(
+                    config["base_model"],
+                    device_map=self.device,
+                    torch_dtype=(torch.bfloat16 if self.mixed_precision else torch.float32),
+                )
+                self.model = self.pipeline.model
+                
+                # Load the PEFT adapter onto the inner T5 model
+                from peft import PeftModel
+                self.model.model = PeftModel.from_pretrained(
+                    self.model.model,
+                    str(adapter_path),
+                    device_map=self.device,
+                )
+                
+                self.model_loaded = True
+                print(f"Loaded Chronos model with PEFT adapter from {model_path}")
+                
+            except Exception as e:
+                print(f"Warning: Could not load PEFT model: {e}")
+                
+        elif (model_path_obj / "pytorch_model.bin").exists() or (model_path_obj / "model.safetensors").exists():
+            # Legacy: full model checkpoint
+>>>>>>> origin/main
             try:
                 self.model = AutoModelForSeq2SeqLM.from_pretrained(
                     str(model_path_obj),
@@ -645,6 +774,8 @@ class ChronosFineTuner:
             self.tokenizer_data = AdvancedTokenizer(
                 method=tokenizer_state["method"],
                 num_bins=tokenizer_state["num_bins"],
+                include_technical_indicators=tokenizer_state.get("include_technical_indicators", False),
+                include_time_features=tokenizer_state.get("include_time_features", False),
             )
             self.tokenizer_data.bin_edges = tokenizer_state["bin_edges"]
             self.tokenizer_data.column_stats = tokenizer_state["column_stats"]
@@ -670,10 +801,50 @@ class ChronosFineTuner:
                 "Tokenizer not loaded. Call prepare_data() or load_fine_tuned_model() first."
             )
 
-        # Extract target series
-        target_series = test_data[[target_col]].to_numpy().flatten()
+        # Extract target series - handle both regular and multi-index columns
+        # For MultiIndex, we need to search for the column to avoid selecting multiple columns
+        if isinstance(test_data.columns, pd.MultiIndex):
+            # Find column with target_col in its name
+            matching_cols = [col for col in test_data.columns if target_col in str(col)]
+            if matching_cols:
+                # Get the first match - prefer exact matches or matches with "Close"
+                exact_match = next((col for col in matching_cols if col[-1] == target_col or (isinstance(col, tuple) and target_col in col and 'Close' in str(col))), matching_cols[0])
+                target_df = test_data[[exact_match]]
+                # Flatten the MultiIndex column name to simple string
+                target_df.columns = [target_col]
+            else:
+                raise KeyError(f"Column '{target_col}' not found in DataFrame. Available columns: {list(test_data.columns[:10])}")
+        elif target_col in test_data.columns:
+            # Regular index with exact column match
+            target_df = test_data[[target_col]]
+        else:
+            # Regular index but need to search
+            matching_cols = [col for col in test_data.columns if target_col in str(col)]
+            if matching_cols:
+                target_df = test_data[[matching_cols[0]]]
+            else:
+                raise KeyError(f"Column '{target_col}' not found in DataFrame. Available columns: {list(test_data.columns[:10])}")
+        
+        target_series = target_df.to_numpy().flatten()
 
+<<<<<<< HEAD
         # Tokenize (for future expansion)
+||||||| 010ce33
+        # Tokenize
+        tokens_dict = self.tokenizer_data.transform(test_data[[target_col]])
+        tokens = tokens_dict[target_col]
+=======
+        # Tokenize
+        tokens_dict = self.tokenizer_data.transform(target_df)
+        # Handle dict keys - might be column name or tuple for multi-index
+        if target_col in tokens_dict:
+            tokens = tokens_dict[target_col]
+        elif len(tokens_dict.values()) > 0:
+            # Get first value from dict
+            tokens = list(tokens_dict.values())[0]
+        else:
+            raise ValueError(f"Tokenizer returned empty dict for column '{target_col}'. Dict keys: {list(tokens_dict.keys())}")
+>>>>>>> origin/main
 
         # Use context window (for future expansion)
         # context_tokens = tokens[-self.context_length :]
@@ -717,6 +888,12 @@ class ChronosFineTuner:
         test_data: pd.DataFrame,
         target_col: str,
         prediction_length: int = 20,
-    ) -> dict:
-        """Forecast method for compatibility with Phase 3 interface."""
-        return self.forecast_fine_tuned(test_data, target_col, num_samples=100)
+    ) -> np.ndarray:
+        """Forecast method for compatibility with Phase 3 interface.
+        
+        Returns:
+            Forecast array of shape (prediction_length,) containing median predictions
+        """
+        result = self.forecast_fine_tuned(test_data, target_col, num_samples=100)
+        # Return median forecast as numpy array for compatibility with baseline models
+        return result["median"][:prediction_length]

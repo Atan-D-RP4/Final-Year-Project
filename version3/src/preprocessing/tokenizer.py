@@ -192,6 +192,25 @@ class AdvancedTokenizer(FinancialDataTokenizer):
 
         super().fit(data)
 
+    def transform(self, data: pd.DataFrame) -> dict[str, np.ndarray]:
+        """Transform data to tokens with feature engineering.
+
+        Args:
+            data: Input DataFrame
+
+        Returns:
+            Dictionary with tokenized data
+        """
+        # Add technical indicators if needed
+        if self.include_technical_indicators:
+            data = self._add_technical_indicators(data)
+
+        # Add time features if needed
+        if self.include_time_features:
+            data = self._add_time_features(data)
+
+        return super().transform(data)
+
     def _add_technical_indicators(
         self,
         data: pd.DataFrame,
