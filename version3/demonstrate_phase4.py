@@ -1,6 +1,5 @@
 """Demonstration of Phase 4: Chronos Fine-tuning and Phase 3 Integration."""
 
-from typing import Any
 
 from experiments.phase3.zero_shot import ZeroShotExperiment
 from experiments.phase4.fine_tune import Phase4Experiment

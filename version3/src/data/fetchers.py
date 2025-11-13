@@ -1,7 +1,7 @@
 """Data fetching from various sources."""
 
 import os
-from typing import Any, Optional
+from typing import Any
 
 import pandas as pd
 import yfinance as yf
@@ -61,7 +61,7 @@ class FredFetcher:
             api_key: FRED API key. If None, uses FRED_API_KEY env var.
         """
         self.api_key = api_key or os.getenv("FRED_API_KEY")
-        self.fred: Optional[Any] = None
+        self.fred: Any | None = None
 
         if self.api_key:
             try:

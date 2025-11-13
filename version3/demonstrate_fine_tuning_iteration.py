@@ -4,13 +4,15 @@ This script shows how to use the FineTuningIterator module to systematically
 iterate on model fine-tuning with comprehensive tracking and analysis.
 """
 
-import pandas as pd
+from typing import cast
+
 import numpy as np
+import pandas as pd
 
 from src.models.fine_tuning_iterator import (
+    ExperimentAnalyzer,
     FineTuningIterator,
     HyperparameterConfig,
-    ExperimentAnalyzer,
 )
 
 
@@ -35,10 +37,13 @@ def create_sample_data() -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     data = pd.DataFrame(
         {
             "Close": close_price,
-            "SMA_20": pd.Series(close_price).rolling(20).mean().values,
-            "SMA_50": pd.Series(close_price).rolling(50).mean().values,
+            "SMA_20": cast(pd.Series, pd.Series(close_price).rolling(20).mean()).fillna(0),
+            "SMA_50": cast(pd.Series, pd.Series(close_price).rolling(50).mean()).fillna(0),
             "Volume": np.random.uniform(1000000, 5000000, n),
-            "Volatility": pd.Series(close_price).pct_change().rolling(20).std().values * 100,
+            "Volatility": (
+                cast(pd.Series, pd.Series(close_price).pct_change().rolling(20).std()).fillna(0)
+                * 100
+            ),
         },
         index=dates,
     )
@@ -85,15 +90,15 @@ def example_1_single_experiment():
 
     print(f"\nExperiment ID: {result.experiment_id}")
     print(f"Timestamp: {result.timestamp}")
-    print(f"\nHyperparameters:")
+    print("\nHyperparameters:")
     for key, value in result.hyperparams.items():
         print(f"  {key}: {value}")
 
-    print(f"\nTest Metrics:")
+    print("\nTest Metrics:")
     for key, value in result.test_metrics.items():
         print(f"  {key}: {value:.6f}")
 
-    print(f"\nData Insights:")
+    print("\nData Insights:")
     print(f"  Train quality: {result.data_insights.get('train_quality', {})}")
     print(f"  Target distribution: {result.data_insights.get('target_distribution', {})}")
 
@@ -175,6 +180,13 @@ def example_3_experiment_analysis():
         param_grid=param_grid,
         experiment_name="analysis_demo",
     )
+
+    print(f"\nCompleted {len(results)} experiments for analysis")
+    for result in results:
+        print(
+            f"  Exp ID: {result.experiment_id}, LR: {result.hyperparams.get('learning_rate')}, "
+            f"Batch Size: {result.hyperparams.get('batch_size')}, MAE: {result.test_metrics.get('mae'):.6f}"
+        )
 
     # Analyze results
     analyzer = ExperimentAnalyzer(iterator.tracker.experiments)
@@ -301,6 +313,13 @@ def example_5_practical_workflow():
         experiment_name="phase2_lr_search",
     )
 
+    print("\nLearning Rate Search Results:")
+    for result in lr_results:
+        lr = result.hyperparams.get("learning_rate")
+        mae = result.test_metrics.get("mae", float("inf"))
+        improvement = (baseline_mae - mae) / baseline_mae * 100
+        print(f"  LR={lr:.0e}: MAE={mae:.6f} ({improvement:.1f}% improvement)")
+
     best_lr_exp = iterator.identify_best_experiment(metric="mae")
     if best_lr_exp:
         best_mae = best_lr_exp.test_metrics.get("mae", float("inf"))
@@ -324,15 +343,22 @@ def example_5_practical_workflow():
         experiment_name="phase3_regularization",
     )
 
+    print("\nRegularization Tuning Results:")
+    for result in reg_results:
+        wd = result.hyperparams.get("weight_decay")
+        mae = result.test_metrics.get("mae", float("inf"))
+        improvement = (baseline_mae - mae) / baseline_mae * 100
+        print(f"  Weight Decay={wd}: MAE={mae:.6f} ({improvement:.1f}% improvement)")
+
     best_final = iterator.identify_best_experiment(metric="mae")
     if best_final:
         final_mae = best_final.test_metrics.get("mae", float("inf"))
         total_improvement = (baseline_mae - final_mae) / baseline_mae * 100
         print(f"Final MAE: {final_mae:.6f} ({total_improvement:.1f}% total improvement)")
 
-    print(f"\nBest configuration found:")
-    for key, value in best_final.hyperparams.items():
-        print(f"  {key}: {value}")
+        print("\nBest configuration found:")
+        for key, value in best_final.hyperparams.items():
+            print(f"  {key}: {value}")
 
 
 def main():

@@ -1,7 +1,7 @@
 """Baseline forecasting models for financial time series."""
 
 from abc import ABC, abstractmethod
-from typing import Any, Optional
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -120,7 +120,7 @@ class SeasonalNaiveForecaster(BaselineForecaster):
             daily trading days)
         """
         self.seasonal_period = seasonal_period
-        self.seasonal_values: Optional[np.ndarray] = None
+        self.seasonal_values: np.ndarray | None = None
 
     def fit(
         self,
@@ -168,7 +168,7 @@ class MeanForecaster(BaselineForecaster):
 
     def __init__(self):
         """Initialize mean forecaster."""
-        self.mean: Optional[float] = None
+        self.mean: float | None = None
 
     def fit(
         self,
@@ -218,7 +218,7 @@ class ARIMAForecaster(BaselineForecaster):
             order: ARIMA order (p, d, q)
         """
         self.order = order
-        self.model: Optional[Any] = None
+        self.model: Any | None = None
 
     def fit(
         self,
@@ -275,7 +275,7 @@ class VARForecaster(BaselineForecaster):
             lags: Number of lags to use
         """
         self.lags = lags
-        self.model: Optional[Any] = None
+        self.model: Any | None = None
 
     def fit(
         self,
@@ -345,7 +345,7 @@ class LinearRegressionForecaster(BaselineForecaster):
         """
         self.lags = lags
         self.horizon = horizon
-        self.model: Optional[LinearRegression] = None
+        self.model: LinearRegression | None = None
         self.scaler = StandardScaler()
 
     def fit(
@@ -449,7 +449,7 @@ class LSTMForecaster(BaselineForecaster):
         self.num_layers = num_layers
         self.dropout = dropout
         self.device = device
-        self.model: Optional[nn.Module] = None
+        self.model: nn.Module | None = None
         self.scaler = StandardScaler()
 
     def _build_model(self, input_size: int = 1) -> nn.Module:
@@ -614,7 +614,7 @@ class ExponentialSmoothingForecaster(BaselineForecaster):
             smoothing_level: Smoothing parameter (0 to 1)
         """
         self.smoothing_level = smoothing_level
-        self.last_level: Optional[float] = None
+        self.last_level: float | None = None
 
     def fit(
         self,

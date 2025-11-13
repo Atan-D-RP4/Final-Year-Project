@@ -13,7 +13,7 @@ Key features:
 """
 
 import json
-from dataclasses import dataclass, asdict
+from dataclasses import asdict, dataclass
 from datetime import datetime
 from pathlib import Path
 from typing import Any, cast
@@ -405,7 +405,7 @@ class FineTuningIterator:
         results = []
 
         for i, values in enumerate(itertools.product(*param_values)):
-            hyperparams = dict(zip(param_names, values))
+            hyperparams = dict(zip(param_names, values, strict=True))
             notes = f"Grid search iteration {i + 1}"
 
             self.logger.info(f"Running iteration {i + 1}: {hyperparams}")
@@ -569,10 +569,10 @@ class FineTuningIterator:
         try:
             # Test evaluation
             test_forecasts = fine_tuner.forecast_fine_tuned(test_data, target_col, num_samples=100)
-            test_actual = cast(
-                np.ndarray, test_data[target_col].values[-len(test_forecasts.get("median", [])) :]
-            )
-            test_pred = test_forecasts.get("median", test_forecasts.get("forecast", []))
+            test_median = test_forecasts.get("median") or test_forecasts.get("forecast") or []
+            test_median = cast(list, test_median)
+            test_actual = cast(np.ndarray, test_data[target_col].values[-len(test_median) :])
+            test_pred = test_median
 
             if len(test_actual) > 0 and len(test_pred) > 0:
                 test_metrics = self.evaluator.evaluate(
@@ -583,10 +583,10 @@ class FineTuningIterator:
             train_forecasts = fine_tuner.forecast_fine_tuned(
                 train_data, target_col, num_samples=100
             )
-            train_actual = cast(
-                np.ndarray, train_data[target_col].values[-len(train_forecasts.get("median", [])) :]
-            )
-            train_pred = train_forecasts.get("median", train_forecasts.get("forecast", []))
+            train_median = train_forecasts.get("median") or train_forecasts.get("forecast") or []
+            train_median = cast(list, train_median)
+            train_actual = cast(np.ndarray, train_data[target_col].values[-len(train_median) :])
+            train_pred = train_median
 
             if len(train_actual) > 0 and len(train_pred) > 0:
                 train_metrics = self.evaluator.evaluate(
@@ -595,10 +595,10 @@ class FineTuningIterator:
 
             # Val evaluation
             val_forecasts = fine_tuner.forecast_fine_tuned(val_data, target_col, num_samples=100)
-            val_actual = cast(
-                np.ndarray, val_data[target_col].values[-len(val_forecasts.get("median", [])) :]
-            )
-            val_pred = val_forecasts.get("median", val_forecasts.get("forecast", []))
+            val_median = val_forecasts.get("median") or val_forecasts.get("forecast") or []
+            val_median = cast(list, val_median)
+            val_actual = cast(np.ndarray, val_data[target_col].values[-len(val_median) :])
+            val_pred = val_median
 
             if len(val_actual) > 0 and len(val_pred) > 0:
                 val_metrics = self.evaluator.evaluate(
