@@ -1136,6 +1136,12 @@ The modular, well-documented implementation ensures that this work can serve as 
 
 #pagebreak()
 
+#heading(level: 1)[Gallery]
+#image("./1.png")
+#image("./2.png")
+#image("./3.png")
+#image("./4.png")
+
 #heading(level: 1)[Appendix A: Installation and Setup]
 
 #heading(level: 2)[System Requirements]
