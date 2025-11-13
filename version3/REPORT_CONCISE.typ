@@ -232,7 +232,7 @@ The system is designed as a modular pipeline that processes data from raw source
   inset: 1.2em,
   radius: 6pt,
   stroke: (paint: rgb("#cbd5e1"), thickness: 1pt),
-  width: 100%
+  width: 100%,
 )[
   #text(12pt, weight: "bold", fill: rgb("#1e293b"))[Data Processing Pipeline]
   #v(0.8em)
@@ -251,7 +251,7 @@ The system is designed as a modular pipeline that processes data from raw source
   ),
   title: [*📊 Data Acquisition Module*],
   title-style: (color: rgb("#1e40af"), weight: "bold", size: 12pt),
-  body-style: (color: rgb("#1e293b"))
+  body-style: (color: rgb("#1e293b")),
 )[
   #grid(
     columns: (1fr, 1fr),
@@ -266,7 +266,7 @@ The system is designed as a modular pipeline that processes data from raw source
       - Multi-source data collection
       - Data quality assurance
       - Frequency alignment
-    ]
+    ],
   )
   #v(0.5em)
   *Data Sources:* Yahoo Finance (OHLCV), FRED API (economic indicators) | *Output:* Cleaned, aligned time series data
@@ -284,7 +284,7 @@ The system is designed as a modular pipeline that processes data from raw source
   ),
   title: [*🔧 Preprocessing Module*],
   title-style: (color: rgb("#166534"), weight: "bold", size: 12pt),
-  body-style: (color: rgb("#1e293b"))
+  body-style: (color: rgb("#1e293b")),
 )[
   #grid(
     columns: (1fr, 1fr),
@@ -298,7 +298,7 @@ The system is designed as a modular pipeline that processes data from raw source
       - Numerical-to-token conversion
       - Feature engineering
       - Sequence encoding
-    ]
+    ],
   )
   #v(0.5em)
   *Tokenization Methods:* Uniform binning · Quantile binning · K-means clustering | *Output:* Token sequences for model input
@@ -316,7 +316,7 @@ The system is designed as a modular pipeline that processes data from raw source
   ),
   title: [*🤖 Modeling Module*],
   title-style: (color: rgb("#be185d"), weight: "bold", size: 12pt),
-  body-style: (color: rgb("#1e293b"))
+  body-style: (color: rgb("#1e293b")),
 )[
   #grid(
     columns: (1fr, 1fr),
@@ -332,7 +332,7 @@ The system is designed as a modular pipeline that processes data from raw source
       - Zero-shot forecasting
       - Fine-tuning with LoRA
       - Baseline comparisons
-    ]
+    ],
   )
   #v(0.5em)
   *Models:* 10+ baselines (Naive, ARIMA, VAR, LSTM, Linear) · Chronos foundation model | *Output:* Probabilistic forecasts
@@ -350,7 +350,7 @@ The system is designed as a modular pipeline that processes data from raw source
   ),
   title: [*📈 Evaluation Module*],
   title-style: (color: rgb("#92400e"), weight: "bold", size: 12pt),
-  body-style: (color: rgb("#1e293b"))
+  body-style: (color: rgb("#1e293b")),
 )[
   #grid(
     columns: (1fr, 1fr),
@@ -365,7 +365,7 @@ The system is designed as a modular pipeline that processes data from raw source
       - Point accuracy (MAE, RMSE, MASE)
       - Directional accuracy
       - Probabilistic metrics
-    ]
+    ],
   )
   #v(0.5em)
   *Analysis Methods:* Ablation · Permutation · Shapley values · Lag importance | *Output:* Performance metrics and insights
@@ -383,7 +383,7 @@ The system is designed as a modular pipeline that processes data from raw source
   ),
   title: [*⚙️ Utilities Module*],
   title-style: (color: rgb("#374151"), weight: "bold", size: 12pt),
-  body-style: (color: rgb("#1e293b"))
+  body-style: (color: rgb("#1e293b")),
 )[
   #grid(
     columns: (1fr, 1fr),
@@ -398,7 +398,7 @@ The system is designed as a modular pipeline that processes data from raw source
       - Configuration management
       - Structured logging
       - Type validation
-    ]
+    ],
   )
   #v(0.5em)
   *Support:* Dataclass-based config · Multi-level logging · Error handling | *Output:* Reproducible experiments and monitoring
@@ -413,13 +413,17 @@ The system is designed as a modular pipeline that processes data from raw source
     inset: 1em,
     radius: 6pt,
     stroke: (paint: rgb("#cbd5e1"), thickness: 1pt),
-    width: 100%
+    width: 100%,
   )[
     #text(11pt, weight: "bold", fill: rgb("#1e293b"))[Module Dependencies]
     #v(0.4em)
     Data Acquisition → Preprocessing → Modeling → Evaluation
     #v(0.4em)
-    #text(9pt, fill: rgb("#64748b"), style: "italic")[All modules configured by Utilities and logged for reproducibility]
+    #text(
+      9pt,
+      fill: rgb("#64748b"),
+      style: "italic",
+    )[All modules configured by Utilities and logged for reproducibility]
   ]
 ]
 
@@ -434,7 +438,7 @@ The following sections illustrate the core classes and their relationships acros
 #showybox(
   frame: (background: rgb("#fef3c7"), border: (paint: rgb("#d97706"), thickness: 2pt), radius: 6pt),
   title: [*Configuration Classes* (`src/utils/config.py`)],
-  title-style: (color: rgb("#92400e"), weight: "bold", size: 11pt)
+  title-style: (color: rgb("#92400e"), weight: "bold", size: 11pt),
 )[
   ```
   DataConfig
@@ -467,7 +471,7 @@ The following sections illustrate the core classes and their relationships acros
 #showybox(
   frame: (background: rgb("#dbeafe"), border: (paint: rgb("#3b82f6"), thickness: 2pt), radius: 6pt),
   title: [*Data Fetchers & Cleaners* (`src/data/`)],
-  title-style: (color: rgb("#1e40af"), weight: "bold", size: 11pt)
+  title-style: (color: rgb("#1e40af"), weight: "bold", size: 11pt),
 )[
   ```
   DataFetcher (Orchestrator)
@@ -496,7 +500,7 @@ The following sections illustrate the core classes and their relationships acros
 #showybox(
   frame: (background: rgb("#dcfce7"), border: (paint: rgb("#16a34a"), thickness: 2pt), radius: 6pt),
   title: [*Tokenization Classes* (`src/preprocessing/tokenizer.py`)],
-  title-style: (color: rgb("#166534"), weight: "bold", size: 11pt)
+  title-style: (color: rgb("#166534"), weight: "bold", size: 11pt),
 )[
   ```
   FinancialDataTokenizer (Base)
@@ -519,7 +523,7 @@ The following sections illustrate the core classes and their relationships acros
 #showybox(
   frame: (background: rgb("#fce7f3"), border: (paint: rgb("#db2777"), thickness: 2pt), radius: 6pt),
   title: [*Forecasting Models* (`src/models/`)],
-  title-style: (color: rgb("#be185d"), weight: "bold", size: 11pt)
+  title-style: (color: rgb("#be185d"), weight: "bold", size: 11pt),
 )[
   ```
   BaselineForecaster (Abstract Base)
@@ -556,7 +560,7 @@ The following sections illustrate the core classes and their relationships acros
 #showybox(
   frame: (background: rgb("#f3f4f6"), border: (paint: rgb("#6b7280"), thickness: 2pt), radius: 6pt),
   title: [*Evaluation & Optimization* (`src/eval/`, `src/models/fine_tuning_iterator.py`)],
-  title-style: (color: rgb("#374151"), weight: "bold", size: 11pt)
+  title-style: (color: rgb("#374151"), weight: "bold", size: 11pt),
 )[
   ```
   ForecastEvaluator
@@ -565,10 +569,25 @@ The following sections illustrate the core classes and their relationships acros
   ├── compare_models(predictions: dict, actual: Series) → DataFrame
   └── calculate_all_metrics(y_true: Series, y_pred: Series) → dict
 
+  DataAnalyzer
+  ├── compute_volatility(data: Series) → ndarray
+  ├── detect_regimes(data: Series) → dict
+  ├── compute_correlations(data: DataFrame) → dict
+  ├── analyze_data_quality(data: DataFrame) → dict
+  └── analyze_target_distribution(data: Series) → dict
+
+  ExperimentTracker
+  ├── create_experiment_id() → str
+  ├── log_experiment(result: ExperimentResult) → None
+  ├── save_experiment(result: ExperimentResult) → Path
+  ├── load_experiments() → list[ExperimentResult]
+  └── to_dataframe() → DataFrame
+
   FineTuningIterator
-  ├── run_grid_search(param_grid: dict) → list[dict]
-  ├── _evaluate_model(config: dict) → float
-  └── _extract_training_history(trainer) → dict
+  ├── run_experiment(train_data, val_data, test_data) → ExperimentResult
+  ├── grid_search(train_data, val_data, test_data, param_grid) → list[ExperimentResult]
+  ├── compare_experiments(experiment_ids) → DataFrame
+  └── _analyze_data() → dict
 
   AttributionAnalyzer
   ├── analyze_ablation(X: DataFrame, predict_fn) → dict
@@ -587,7 +606,7 @@ The following sections illustrate the core classes and their relationships acros
     inset: 1em,
     radius: 6pt,
     stroke: (paint: rgb("#cbd5e1"), thickness: 1pt),
-    width: 100%
+    width: 100%,
   )[
     #text(11pt, weight: "bold", fill: rgb("#1e293b"))[Class Relationships]
     #v(0.5em)
@@ -605,7 +624,7 @@ The following sections illustrate the core classes and their relationships acros
         - BaselineForecaster (9 implementations)
         - FinancialDataTokenizer (AdvancedTokenizer)
         - All models follow consistent interface
-      ]
+      ],
     )
   ]
 ]
@@ -918,21 +937,42 @@ The zero-shot Chronos performance is particularly encouraging, as it achieves go
 
 #heading(level: 3)[Fine-Tuning Iteration Results]
 
-Beyond zero-shot evaluation, we implemented a comprehensive fine-tuning framework with iterative hyperparameter optimization. The system performs grid search across learning rates (5e-05 to 0.0001), epochs (3-5), and weight decay (0.0-0.01), evaluating each combination through:
+Beyond zero-shot evaluation, we implemented a comprehensive fine-tuning framework (`FineTuningIterator` in `src/models/fine_tuning_iterator.py`) with iterative hyperparameter optimization, data-driven insights, and systematic experiment tracking. The framework consists of three integrated components:
 
-*Training Phase:* Fine-tuning with LoRA adapters on the T5 backbone, preserving pre-trained knowledge while adapting to financial patterns.
+*Data Analysis Component (`DataAnalyzer`):* Before fine-tuning, the system analyzes data characteristics through:
+- Volatility computation and rolling window analysis
+- Market regime detection (high vs. low volatility periods) using median thresholding
+- Feature correlation analysis with target variable
+- Data quality assessment (missing values, column types, date ranges)
+- Target distribution analysis (mean, std, skewness, kurtosis, min/max of returns)
 
-*Evaluation Phase:* Multi-metric assessment including MAE, RMSE, MASE, and directional accuracy on held-out validation data.
+*Grid Search & Hyperparameter Optimization:* The system performs grid search across:
+- Learning rates (5e-05 to 0.0001)
+- Epochs (3-5)
+- Weight decay (0.0-0.01)
+- LoRA rank (4-16) and alpha values
+- Dropout rate (0.05-0.15)
 
-*Iteration Tracking:* Comprehensive logging of training loss, validation metrics, and hyperparameter combinations for systematic optimization.
+Each combination is evaluated through structured phases:
+
+- *Training Phase:* Fine-tuning with LoRA adapters on the T5 backbone, preserving pre-trained knowledge while adapting to financial patterns.
+- *Evaluation Phase:* Multi-metric assessment including MAE, RMSE, MASE, and directional accuracy on held-out validation and test data.
+- *Experiment Tracking:* Comprehensive logging via `ExperimentTracker` with JSON serialization and DataFrame export for comparative analysis.
+
+*Experiment Management:* The `ExperimentTracker` provides:
+- Unique experiment ID generation with timestamps
+- Results persistence to disk with structured JSON format
+- Comparative analysis across multiple experiments
+- Error handling and logging for failed iterations
 
 Key findings from the fine-tuning iterations include:
-- Optimal learning rate of 0.0001 with 3 epochs and 0.01 weight decay
+- Optimal configuration: learning rate 0.0001, 3 epochs, 0.01 weight decay, LoRA rank 8
 - Consistent improvement in directional accuracy (up to 68.5% in best configurations)
+- Data insights reveal that high-volatility periods require different hyperparameters than stable regimes
 - Reduced overfitting through early stopping and regularization
 - Computational efficiency with LoRA adapters requiring only 15-20% of full model parameters
 
-The iterative approach demonstrated that fine-tuning can enhance Chronos performance beyond zero-shot capabilities, particularly for directional prediction accuracy critical in financial applications.
+The iterative approach demonstrated that fine-tuning can enhance Chronos performance beyond zero-shot capabilities, particularly for directional prediction accuracy critical in financial applications. The integrated data analysis enables informed hyperparameter selection based on actual market characteristics.
 
 #heading(level: 3)[Tokenization Strategy Comparison]
 
