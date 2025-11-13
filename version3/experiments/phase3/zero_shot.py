@@ -1,9 +1,7 @@
 """Phase 3: Zero-shot forecasting with Chronos vs Baseline models."""
 
-import os
-from datetime import datetime, timedelta
+from datetime import datetime
 from pathlib import Path
-from typing import Optional
 
 import numpy as np
 import pandas as pd
@@ -23,7 +21,7 @@ from src.models.baselines import (
     VARForecaster,
 )
 from src.models.chronos_wrapper import ChronosFinancialForecaster
-from src.utils.config import DataConfig, EvalConfig, PreprocessingConfig
+from src.utils.config import DataConfig, EvalConfig
 from src.utils.logger import setup_logger
 
 
@@ -55,7 +53,7 @@ class ZeroShotExperiment:
 
     def setup_data(
         self,
-        data_config: Optional[DataConfig] = None,
+        data_config: DataConfig | None = None,
     ) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
         """Setup and fetch data.
 
@@ -72,7 +70,7 @@ class ZeroShotExperiment:
 
         # Fetch data
         fetcher = DataFetcher()
-        
+
         # Format dates
         start_date = (
             data_config.start_date
@@ -84,20 +82,20 @@ class ZeroShotExperiment:
             if isinstance(data_config.end_date, str)
             else data_config.end_date.strftime("%Y-%m-%d")
         )
-        
+
         data_dict = fetcher.fetch_all_data(
             market_symbols=data_config.market_symbols,
             fred_series=data_config.fred_series,
             start_date=start_date,
             end_date=end_date,
         )
-        
+
         # Combine market and economic data
         market_data = data_dict.get("market")
         if market_data is None:
             self.logger.error("No market data fetched")
             raise ValueError("Failed to fetch market data")
-        
+
         data = market_data
 
         self.logger.info(f"Fetched data shape: {data.shape}")
@@ -114,9 +112,7 @@ class ZeroShotExperiment:
         train_data = data.iloc[:split_idx].copy()
         test_data = data.iloc[split_idx:].copy()
 
-        self.logger.info(
-            f"Train shape: {train_data.shape}, Test shape: {test_data.shape}"
-        )
+        self.logger.info(f"Train shape: {train_data.shape}, Test shape: {test_data.shape}")
 
         return data, train_data, test_data
 
@@ -126,8 +122,8 @@ class ZeroShotExperiment:
         test_data: pd.DataFrame,
         target_col: str,
         prediction_length: int,
-        eval_config: Optional[EvalConfig] = None,
-        fine_tuned_model_path: Optional[str] = None,
+        eval_config: EvalConfig | None = None,
+        fine_tuned_model_path: str | None = None,
     ) -> dict:
         """Run zero-shot comparison between Chronos and baselines.
 
@@ -149,7 +145,7 @@ class ZeroShotExperiment:
         self.logger.info("=" * 80)
 
         horizon = prediction_length
-        
+
         results = {
             "timestamp": datetime.now().isoformat(),
             "target_col": target_col,
@@ -157,16 +153,32 @@ class ZeroShotExperiment:
             "model_results": {},
         }
 
-        # Initialize models
+        # Initialize and prepare models
+        models = self._initialize_models(prediction_length, fine_tuned_model_path)
+
+        # Fit and forecast with all models
+        forecasts = self._fit_and_forecast(models, train_data, test_data, target_col, horizon)
+
+        # Evaluate forecasts
+        evaluation_results = self._evaluate_forecasts(forecasts, test_data, target_col)
+
+        results["model_results"] = evaluation_results
+        results["forecasts"] = forecasts
+        results["actual"] = self._extract_actual(test_data, target_col)
+
+        return results
+
+    def _initialize_models(
+        self, prediction_length: int, fine_tuned_model_path: str | None = None
+    ) -> dict:
+        """Initialize all models for comparison."""
         models = {
             "Naive": NaiveForecaster(),
             "Seasonal Naive": SeasonalNaiveForecaster(),
             "Mean": MeanForecaster(),
             "Exponential Smoothing": ExponentialSmoothingForecaster(),
             "ARIMA": ARIMAForecaster(),
-            "Linear Regression": LinearRegressionForecaster(
-                lags=20, horizon=1
-            ),
+            "Linear Regression": LinearRegressionForecaster(lags=20, horizon=1),
             "VAR": VARForecaster(),
             "LSTM": LSTMForecaster(sequence_length=20, device="cpu"),
             "Ensemble": EnsembleForecaster(),
@@ -180,6 +192,7 @@ class ZeroShotExperiment:
         if fine_tuned_model_path:
             try:
                 from experiments.phase4.fine_tune import Phase4Experiment
+
                 phase4_exp = Phase4Experiment()
                 fine_tuned_model = phase4_exp.load_fine_tuned_model(fine_tuned_model_path)
                 models["Chronos (fine-tuned)"] = fine_tuned_model
@@ -187,9 +200,18 @@ class ZeroShotExperiment:
             except Exception as e:
                 self.logger.warning(f"Could not load fine-tuned model: {e}")
 
-        evaluator = ForecastEvaluator()
+        return models
 
-        # Fit models on training data
+    def _fit_and_forecast(
+        self,
+        models: dict,
+        train_data: pd.DataFrame,
+        test_data: pd.DataFrame,
+        target_col: str,
+        horizon: int,
+    ) -> dict:
+        """Fit models and generate forecasts."""
+        # Fit models
         self.logger.info("Fitting models...")
         for model_name, model in models.items():
             try:
@@ -209,9 +231,8 @@ class ZeroShotExperiment:
             except Exception as e:
                 self.logger.error(f"  ✗ {model_name} fit failed: {e}")
 
-        # Generate forecasts on test data
+        # Generate forecasts
         self.logger.info("Generating forecasts...")
-
         forecasts = {}
         for model_name, model in models.items():
             try:
@@ -249,12 +270,21 @@ class ZeroShotExperiment:
             except Exception as e:
                 self.logger.error(f"  ✗ {model_name} forecast failed: {e}")
 
-        # Evaluate forecasts
-        self.logger.info("Evaluating forecasts...")
+        return forecasts
 
-        # Use the same helper function for consistency
+    def _evaluate_forecasts(
+        self,
+        forecasts: dict,
+        test_data: pd.DataFrame,
+        target_col: str,
+    ) -> dict:
+        """Evaluate forecasts using metrics."""
         from src.models.baselines import _extract_target_column
+
+        evaluator = ForecastEvaluator()
         actual = _extract_target_column(test_data, target_col)
+
+        self.logger.info("Evaluating forecasts...")
 
         evaluation_results = {}
         for model_name, pred in forecasts.items():
@@ -276,18 +306,18 @@ class ZeroShotExperiment:
                 self.logger.info(f"  ✓ {model_name} evaluated")
                 self.logger.info(f"    MAE: {metrics['mae']:.4f}")
                 self.logger.info(f"    RMSE: {metrics['rmse']:.4f}")
-                self.logger.info(
-                    f"    Directional Accuracy: {metrics['directional_accuracy']:.4f}"
-                )
+                self.logger.info(f"    Directional Accuracy: {metrics['directional_accuracy']:.4f}")
 
             except Exception as e:
                 self.logger.error(f"  ✗ {model_name} evaluation failed: {e}")
 
-        results["model_results"] = evaluation_results
-        results["forecasts"] = forecasts
-        results["actual"] = actual
+        return evaluation_results
 
-        return results
+    def _extract_actual(self, test_data: pd.DataFrame, target_col: str) -> np.ndarray:
+        """Extract actual values from test data."""
+        from src.models.baselines import _extract_target_column
+
+        return _extract_target_column(test_data, target_col)
 
     def save_results(self, results: dict, experiment_name: str) -> None:
         """Save experiment results.
@@ -308,10 +338,7 @@ class ZeroShotExperiment:
                 json_results[key] = value.tolist()
             elif isinstance(value, dict):
                 json_results[key] = {
-                    k: (
-                        v.tolist() if isinstance(v, np.ndarray) else v
-                    )
-                    for k, v in value.items()
+                    k: (v.tolist() if isinstance(v, np.ndarray) else v) for k, v in value.items()
                 }
             else:
                 json_results[key] = value
@@ -410,29 +437,25 @@ class ZeroShotExperiment:
                     if metric_values:
                         ax.bar(range(len(model_names)), metric_values)
                         ax.set_xticks(range(len(model_names)))
-                        ax.set_xticklabels(
-                            model_names, rotation=45, ha="right"
-                        )
+                        ax.set_xticklabels(model_names, rotation=45, ha="right")
                         ax.set_ylabel(metric.upper())
                         ax.set_title(metric.upper())
                         ax.grid(True, alpha=0.3, axis="y")
 
             plt.tight_layout()
-            metrics_plot_path = self.results_dir / (
-                f"{experiment_name}_metrics.png"
-            )
+            metrics_plot_path = self.results_dir / (f"{experiment_name}_metrics.png")
             plt.savefig(metrics_plot_path, dpi=150, bbox_inches="tight")
             self.logger.info(f"Metrics plot saved to {metrics_plot_path}")
             plt.close()
 
     def run(
         self,
-        data_config: Optional[DataConfig] = None,
-        eval_config: Optional[EvalConfig] = None,
+        data_config: DataConfig | None = None,
+        eval_config: EvalConfig | None = None,
         target_col: str = "Close",
         prediction_length: int = 20,
         experiment_name: str = "zero_shot",
-        fine_tuned_model_path: Optional[str] = None,
+        fine_tuned_model_path: str | None = None,
     ) -> dict:
         """Run complete zero-shot experiment.
 
@@ -446,9 +469,7 @@ class ZeroShotExperiment:
         Returns:
             Results dictionary
         """
-        self.logger.info(
-            f"Starting zero-shot experiment: {experiment_name}"
-        )
+        self.logger.info(f"Starting zero-shot experiment: {experiment_name}")
 
         # Setup data
         _, train_data, test_data = self.setup_data(data_config)
@@ -485,7 +506,7 @@ def main():
     # Run with default configurations
     # Use first target symbol (S&P 500)
     target_symbol = "^GSPC"
-    results = experiment.run(
+    experiment.run(
         target_col=target_symbol,
         prediction_length=20,
         experiment_name="zero_shot_default",

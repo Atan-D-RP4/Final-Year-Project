@@ -1,8 +1,7 @@
 """Data fetching from various sources."""
 
 import os
-from datetime import datetime
-from typing import Optional
+from typing import Any, Optional
 
 import pandas as pd
 import yfinance as yf
@@ -18,7 +17,7 @@ class YahooFinanceFetcher:
         end_date: str,
         interval: str = "1d",
         auto_adjust: bool = True,
-    ) -> pd.DataFrame:
+    ) -> pd.DataFrame | None:
         """Fetch historical price data.
 
         Args:
@@ -31,44 +30,46 @@ class YahooFinanceFetcher:
         Returns:
             DataFrame with OHLCV data
         """
-        data = yf.download(
-            tickers,
-            start=start_date,
-            end=end_date,
-            interval=interval,
-            auto_adjust=auto_adjust,
-            progress=False,
-        )
+        try:
+            data = yf.download(
+                tickers,
+                start=start_date,
+                end=end_date,
+                interval=interval,
+                auto_adjust=auto_adjust,
+                progress=False,
+            )
 
-        if len(tickers) == 1:
-            # yfinance returns (Price, Ticker) format, swap to (Ticker, Price)
-            data.columns = data.columns.swaplevel(0, 1)
+            if len(tickers) == 1 and isinstance(data, pd.DataFrame):
+                # yfinance returns (Price, Ticker) format, swap to (Ticker, Price)
+                if isinstance(data.columns, pd.MultiIndex):
+                    data.columns = data.columns.swaplevel(0, 1)
 
-        return data
+            return data
+        except Exception as e:
+            print(f"Error fetching data for {tickers}: {e}")
+            return None
 
 
 class FredFetcher:
     """Fetch economic data from FRED."""
 
-    def __init__(self, api_key: Optional[str] = None):
+    def __init__(self, api_key: str | None = None):
         """Initialize FRED fetcher.
 
         Args:
             api_key: FRED API key. If None, uses FRED_API_KEY env var.
         """
         self.api_key = api_key or os.getenv("FRED_API_KEY")
+        self.fred: Optional[Any] = None
 
-        if not self.api_key:
-            self.fred = None
-        else:
+        if self.api_key:
             try:
                 from fredapi import Fred  # type: ignore
 
                 self.fred = Fred(api_key=self.api_key)
-            except ImportError:
-                raise ImportError(
-                    "fredapi not installed. Install with: pip install fredapi"
-                )
+            except ImportError as e:
+                raise ImportError("fredapi not installed. Install with: pip install fredapi") from e
 
     def fetch_data(
         self,
@@ -112,7 +113,7 @@ class FredFetcher:
 class DataFetcher:
     """Main data fetcher combining multiple sources."""
 
-    def __init__(self, fred_api_key: Optional[str] = None):
+    def __init__(self, fred_api_key: str | None = None):
         """Initialize data fetcher.
 
         Args:
@@ -127,7 +128,7 @@ class DataFetcher:
         fred_series: list[str],
         start_date: str,
         end_date: str,
-    ) -> dict[str, pd.DataFrame]:
+    ) -> dict[str, pd.DataFrame | None]:
         """Fetch data from all sources.
 
         Args:
@@ -145,18 +146,14 @@ class DataFetcher:
         # Fetch market data
         if market_symbols:
             try:
-                market_data = self.yahoo.fetch_data(
-                    market_symbols, start_date, end_date
-                )
+                market_data = self.yahoo.fetch_data(market_symbols, start_date, end_date)
             except Exception as e:
                 print(f"Error fetching market data: {e}")
 
         # Fetch economic data
-        if fred_series and self.fred.fred is not None:
+        if fred_series and self.fred is not None:
             try:
-                economic_data = self.fred.fetch_data(
-                    fred_series, start_date, end_date
-                )
+                economic_data = self.fred.fetch_data(fred_series, start_date, end_date)
             except Exception as e:
                 print(f"Error fetching economic data: {e}")
 

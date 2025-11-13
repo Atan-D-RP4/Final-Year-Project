@@ -1,16 +1,14 @@
 """Phase 4: Fine-tuning Chronos models for financial forecasting."""
 
-import os
-from pathlib import Path
-from typing import Dict, List, Optional, Tuple, Any
 import json
-import pickle
 from datetime import datetime
+from pathlib import Path
+from typing import Any
 
 import numpy as np
 import pandas as pd
 
-from src.models.chronos_wrapper import ChronosFinancialForecaster, ChronosFineTuner
+from src.models.chronos_wrapper import ChronosFineTuner
 from src.utils.logger import setup_logger
 
 
@@ -32,8 +30,8 @@ class Phase4Experiment:
         target_symbol: str = "^GSPC",
         experiment_name: str = "chronos_fine_tune",
         do_hyperparam_search: bool = False,
-        **kwargs
-    ) -> Dict[str, Any]:
+        **kwargs,
+    ) -> dict[str, Any]:
         """Run complete fine-tuning experiment.
 
         Args:
@@ -59,7 +57,9 @@ class Phase4Experiment:
             fine_tuner.load_base_model()
         except Exception as e:
             self.logger.warning(f"Could not load base model: {e}. Using mock fine-tuning.")
-            return self._mock_fine_tuning_experiment(train_data, val_data, test_data, experiment_name)
+            return self._mock_fine_tuning_experiment(
+                train_data, val_data, test_data, experiment_name
+            )
 
         # Setup PEFT adapter
         try:
@@ -101,9 +101,7 @@ class Phase4Experiment:
         results["fine_tuning"]["model_path"] = model_save_path
 
         # Evaluate fine-tuned model - use 'Close' as target column
-        eval_results = self._evaluate_fine_tuned_model(
-            fine_tuner, test_data, "Close"
-        )
+        eval_results = self._evaluate_fine_tuned_model(fine_tuner, test_data, "Close")
         results["evaluation"] = eval_results
 
         # Save results
@@ -112,7 +110,7 @@ class Phase4Experiment:
         self.logger.info("Phase 4 experiment completed successfully!")
         return results
 
-    def _setup_data(self, target_symbol: str) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    def _setup_data(self, target_symbol: str) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
         """Setup train/val/test data.
 
         Args:
@@ -122,8 +120,8 @@ class Phase4Experiment:
             Train, validation, and test data
         """
         try:
-            from src.data.fetchers import YahooFinanceFetcher
             from src.data.cleaning import DataCleaner
+            from src.data.fetchers import YahooFinanceFetcher
             from src.preprocessing.tokenizer import AdvancedTokenizer
 
             # Fetch data
@@ -137,14 +135,20 @@ class Phase4Experiment:
             # Flatten MultiIndex columns if present
             if isinstance(data.columns, pd.MultiIndex):
                 # Extract Close price column for the target symbol
-                if (target_symbol, 'Close') in data.columns:
-                    data = pd.DataFrame({
-                        'Close': data[(target_symbol, 'Close')],
-                    }, index=data.index)
+                if (target_symbol, "Close") in data.columns:
+                    data = pd.DataFrame(
+                        {
+                            "Close": data[(target_symbol, "Close")],
+                        },
+                        index=data.index,
+                    )
                 else:
                     # Fallback: flatten all columns
-                    data.columns = ['_'.join(col).strip() if isinstance(col, tuple) else col for col in data.columns]
-            
+                    data.columns = [
+                        "_".join(col).strip() if isinstance(col, tuple) else col
+                        for col in data.columns
+                    ]
+
             # Add technical indicators
             tokenizer = AdvancedTokenizer(
                 num_bins=1024,
@@ -158,11 +162,14 @@ class Phase4Experiment:
             self.logger.warning(f"Data setup failed: {e}. Using mock data.")
             # Create mock data
             dates = pd.date_range("2010-01-01", "2024-12-31", freq="D")
-            data = pd.DataFrame({
-                'Close': np.random.randn(len(dates)).cumsum() + 100,
-                'SMA_20': np.random.randn(len(dates)).cumsum() + 100,
-                'RSI': np.random.uniform(0, 100, len(dates)),
-            }, index=dates)
+            data = pd.DataFrame(
+                {
+                    "Close": np.random.randn(len(dates)).cumsum() + 100,
+                    "SMA_20": np.random.randn(len(dates)).cumsum() + 100,
+                    "RSI": np.random.uniform(0, 100, len(dates)),
+                },
+                index=dates,
+            )
 
         # Split data (70% train, 15% val, 15% test)
         n_total = len(data)
@@ -170,19 +177,18 @@ class Phase4Experiment:
         n_val = int(0.15 * n_total)
 
         train_data = data[:n_train]
-        val_data = data[n_train:n_train + n_val]
-        test_data = data[n_train + n_val:]
+        val_data = data[n_train : n_train + n_val]
+        test_data = data[n_train + n_val :]
 
-        self.logger.info(f"Data split: Train {len(train_data)}, Val {len(val_data)}, Test {len(test_data)}")
+        self.logger.info(
+            f"Data split: Train {len(train_data)}, Val {len(val_data)}, Test {len(test_data)}"
+        )
 
         return train_data, val_data, test_data
 
     def _evaluate_fine_tuned_model(
-        self,
-        fine_tuner: ChronosFineTuner,
-        test_data: pd.DataFrame,
-        target_col: str
-    ) -> Dict[str, Any]:
+        self, fine_tuner: ChronosFineTuner, test_data: pd.DataFrame, target_col: str
+    ) -> dict[str, Any]:
         """Evaluate fine-tuned model on test data.
 
         Args:
@@ -201,10 +207,12 @@ class Phase4Experiment:
 
             # Get actual values
             from src.models.baselines import _extract_target_column
-            actual = _extract_target_column(test_data, target_col)[-len(forecasts["median"]):]
+
+            actual = _extract_target_column(test_data, target_col)[-len(forecasts["median"]) :]
 
             # Calculate metrics
             from src.eval.metrics import calculate_all_metrics
+
             pred = forecasts["median"]
 
             results = calculate_all_metrics(
@@ -233,8 +241,8 @@ class Phase4Experiment:
         train_data: pd.DataFrame,
         val_data: pd.DataFrame,
         test_data: pd.DataFrame,
-        experiment_name: str
-    ) -> Dict[str, Any]:
+        experiment_name: str,
+    ) -> dict[str, Any]:
         """Run mock fine-tuning experiment for testing.
 
         Args:
@@ -274,21 +282,25 @@ class Phase4Experiment:
         model_path.mkdir(parents=True, exist_ok=True)
 
         with open(model_path / "metadata.json", "w") as f:
-            json.dump({
-                "model_type": "mock_fine_tuned_chronos",
-                "base_model": "amazon/chronos-t5-small",
-                "training_epochs": 5,
-                "improvement_over_zero_shot": {
-                    "mae_improvement": 0.09,  # 9% improvement
-                    "directional_accuracy_improvement": 0.55,
+            json.dump(
+                {
+                    "model_type": "mock_fine_tuned_chronos",
+                    "base_model": "amazon/chronos-t5-small",
+                    "training_epochs": 5,
+                    "improvement_over_zero_shot": {
+                        "mae_improvement": 0.09,  # 9% improvement
+                        "directional_accuracy_improvement": 0.55,
+                    },
+                    "timestamp": datetime.now().isoformat(),
                 },
-                "timestamp": datetime.now().isoformat(),
-            }, f, indent=2)
+                f,
+                indent=2,
+            )
 
         self._save_results(results, experiment_name)
         return results
 
-    def _save_results(self, results: Dict[str, Any], experiment_name: str) -> None:
+    def _save_results(self, results: dict[str, Any], experiment_name: str) -> None:
         """Save experiment results.
 
         Args:
@@ -323,13 +335,15 @@ def main():
     parser = argparse.ArgumentParser(description="Phase 4: Chronos Fine-tuning")
     parser.add_argument("--target", default="^GSPC", help="Target symbol")
     parser.add_argument("--experiment-name", default="chronos_fine_tune", help="Experiment name")
-    parser.add_argument("--hyperparam-search", action="store_true", help="Perform hyperparameter search")
+    parser.add_argument(
+        "--hyperparam-search", action="store_true", help="Perform hyperparameter search"
+    )
     parser.add_argument("--results-dir", default="results/phase4", help="Results directory")
 
     args = parser.parse_args()
 
     experiment = Phase4Experiment(results_dir=args.results_dir)
-    results = experiment.run_fine_tuning_experiment(
+    experiment.run_fine_tuning_experiment(
         target_symbol=args.target,
         experiment_name=args.experiment_name,
         do_hyperparam_search=args.hyperparam_search,

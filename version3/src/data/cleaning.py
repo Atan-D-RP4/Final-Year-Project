@@ -1,7 +1,5 @@
 """Data cleaning and preprocessing utilities."""
 
-from typing import Optional
-
 import numpy as np
 import pandas as pd
 
@@ -35,9 +33,7 @@ class DataCleaner:
 
         # Remove columns with too many missing values
         missing_ratio = cleaned.isna().sum() / len(cleaned)
-        cols_to_keep = missing_ratio[
-            missing_ratio <= self.max_missing_ratio
-        ].index
+        cols_to_keep = missing_ratio[missing_ratio <= self.max_missing_ratio].index
         cleaned = cleaned[cols_to_keep]
 
         # Forward-fill missing values for market data
@@ -47,7 +43,10 @@ class DataCleaner:
         # Fill remaining NaNs with backward fill
         cleaned = cleaned.bfill()
 
-        return cleaned
+        # Ensure return type is DataFrame
+        if isinstance(cleaned, pd.DataFrame):
+            return cleaned
+        return pd.DataFrame(cleaned)
 
     def clean_economic_data(
         self,
@@ -67,9 +66,7 @@ class DataCleaner:
 
         # Remove columns with too many missing values
         missing_ratio = cleaned.isna().sum() / len(cleaned)
-        cols_to_keep = missing_ratio[
-            missing_ratio <= self.max_missing_ratio
-        ].index
+        cols_to_keep = missing_ratio[missing_ratio <= self.max_missing_ratio].index
         cleaned = cleaned[cols_to_keep]
 
         # Interpolate for economic data
@@ -79,12 +76,15 @@ class DataCleaner:
         # Fill remaining NaNs
         cleaned = cleaned.fillna(method="ffill").fillna(method="bfill")
 
-        return cleaned
+        # Ensure return type is DataFrame
+        if isinstance(cleaned, pd.DataFrame):
+            return cleaned
+        return pd.DataFrame(cleaned)
 
     def align_frequencies(
         self,
-        market_data: Optional[pd.DataFrame],
-        economic_data: Optional[pd.DataFrame],
+        market_data: pd.DataFrame | None,
+        economic_data: pd.DataFrame | None,
         target_freq: str = "D",
     ) -> pd.DataFrame:
         """Align different frequency data sources.
@@ -122,7 +122,7 @@ class DataCleaner:
 
     def create_combined_dataset(
         self,
-        data_dict: dict[str, Optional[pd.DataFrame]],
+        data_dict: dict[str, pd.DataFrame | None],
         target_freq: str = "D",
     ) -> pd.DataFrame:
         """Create combined dataset from market and economic data.
@@ -143,8 +143,8 @@ class DataCleaner:
 
 def create_features(
     data: pd.DataFrame,
-    lag_periods: Optional[list[int]] = None,
-    rolling_windows: Optional[list[int]] = None,
+    lag_periods: list[int] | None = None,
+    rolling_windows: list[int] | None = None,
 ) -> pd.DataFrame:
     """Create technical and lagged features from price data.
 
@@ -172,19 +172,13 @@ def create_features(
     # Create rolling statistics
     for col in close_cols:
         for window in rolling_windows:
-            features[f"{col}_rolling_mean_{window}"] = features[col].rolling(
-                window=window
-            ).mean()
-            features[f"{col}_rolling_std_{window}"] = features[col].rolling(
-                window=window
-            ).std()
+            features[f"{col}_rolling_mean_{window}"] = features[col].rolling(window=window).mean()
+            features[f"{col}_rolling_std_{window}"] = features[col].rolling(window=window).std()
 
     # Calculate returns
     for col in close_cols:
         features[f"{col}_returns"] = features[col].pct_change()
-        features[f"{col}_log_returns"] = np.log(
-            features[col] / features[col].shift(1)
-        )
+        features[f"{col}_log_returns"] = np.log(features[col] / features[col].shift(1))
 
     # Drop rows with NaNs created by lagging
     features = features.dropna()

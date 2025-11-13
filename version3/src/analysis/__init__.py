@@ -1,7 +1,7 @@
 """Attribution and causality analysis for forecasting models."""
 
 from abc import ABC, abstractmethod
-from typing import Callable, Optional
+from collections.abc import Callable
 
 import numpy as np
 import pandas as pd
@@ -36,7 +36,7 @@ class AblationImportance(AttributionMethod):
     performance degradation.
     """
 
-    def __init__(self, metric_fn: Optional[Callable] = None):
+    def __init__(self, metric_fn: Callable | None = None):
         """Initialize ablation importance.
 
         Args:
@@ -99,7 +99,7 @@ class PermutationImportance(AttributionMethod):
 
     def __init__(
         self,
-        metric_fn: Optional[Callable] = None,
+        metric_fn: Callable | None = None,
         n_repeats: int = 10,
         random_state: int = 42,
     ):
@@ -149,9 +149,7 @@ class PermutationImportance(AttributionMethod):
             for _ in range(self.n_repeats):
                 # Create permuted version
                 X_permuted = X.copy()
-                X_permuted[:, feature_idx] = np.random.permutation(
-                    X_permuted[:, feature_idx]
-                )
+                X_permuted[:, feature_idx] = np.random.permutation(X_permuted[:, feature_idx])
 
                 # Compute degraded performance
                 permuted_pred = predict_fn(X_permuted)
@@ -177,7 +175,7 @@ class ShapleyImportance(AttributionMethod):
 
     def __init__(
         self,
-        metric_fn: Optional[Callable] = None,
+        metric_fn: Callable | None = None,
         n_samples: int = 100,
         random_state: int = 42,
     ):
@@ -223,7 +221,7 @@ class ShapleyImportance(AttributionMethod):
             feature_order = np.random.permutation(n_features)
 
             # Compute marginal contributions
-            for i, feature_idx in enumerate(feature_order):
+            for _i, feature_idx in enumerate(feature_order):
                 # Prediction without feature
                 X_without = X.copy()
                 X_without[:, feature_idx] = np.mean(X[:, feature_idx])
@@ -250,7 +248,7 @@ class ShapleyImportance(AttributionMethod):
 class LagImportance:
     """Importance of lagged features for time series."""
 
-    def __init__(self, metric_fn: Optional[Callable] = None):
+    def __init__(self, metric_fn: Callable | None = None):
         """Initialize lag importance.
 
         Args:
@@ -267,7 +265,7 @@ class LagImportance:
         self,
         series: np.ndarray,
         max_lag: int = 50,
-        predict_fn: Optional[Callable] = None,
+        predict_fn: Callable | None = None,
     ) -> dict:
         """Compute importance of different lags.
 
@@ -284,9 +282,7 @@ class LagImportance:
         # Correlation-based importance (if no predict_fn)
         if predict_fn is None:
             for lag in range(1, min(max_lag + 1, len(series) // 2)):
-                correlation = np.corrcoef(
-                    series[:-lag], series[lag:]
-                )[0, 1]
+                correlation = np.corrcoef(series[:-lag], series[lag:])[0, 1]
                 lag_importance[lag] = abs(correlation)
         else:
             # Model-based importance
@@ -317,8 +313,8 @@ class AttributionAnalyzer:
         X: pd.DataFrame,
         y: np.ndarray,
         predict_fn: Callable,
-        methods: Optional[list[str]] = None,
-        feature_names: Optional[list[str]] = None,
+        methods: list[str] | None = None,
+        feature_names: list[str] | None = None,
     ) -> dict:
         """Perform attribution analysis.
 
@@ -336,34 +332,28 @@ class AttributionAnalyzer:
             methods = ["ablation", "permutation"]
 
         if feature_names is None:
-            feature_names = list(X.columns) if hasattr(X, "columns") else [
-                f"Feature_{i}" for i in range(X.shape[1])
-            ]
+            feature_names = (
+                list(X.columns)
+                if hasattr(X, "columns")
+                else [f"Feature_{i}" for i in range(X.shape[1])]
+            )
 
         X_array = X.values if hasattr(X, "values") else X
         results = {}
 
         if "ablation" in methods:
             analyzer = AblationImportance()
-            importances = analyzer.compute_importance(
-                X_array, y, predict_fn
-            )
+            importances = analyzer.compute_importance(X_array, y, predict_fn)
             results["ablation"] = pd.Series(importances, index=feature_names)
 
         if "permutation" in methods:
             analyzer = PermutationImportance()
-            importances = analyzer.compute_importance(
-                X_array, y, predict_fn
-            )
-            results["permutation"] = pd.Series(
-                importances, index=feature_names
-            )
+            importances = analyzer.compute_importance(X_array, y, predict_fn)
+            results["permutation"] = pd.Series(importances, index=feature_names)
 
         if "shapley" in methods:
             analyzer = ShapleyImportance()
-            importances = analyzer.compute_importance(
-                X_array, y, predict_fn
-            )
+            importances = analyzer.compute_importance(X_array, y, predict_fn)
             results["shapley"] = pd.Series(importances, index=feature_names)
 
         self.results = results

@@ -1,7 +1,6 @@
 """Smoke tests for end-to-end pipeline validation."""
 
 import tempfile
-from datetime import datetime, timedelta
 from pathlib import Path
 
 import numpy as np
@@ -27,7 +26,6 @@ from src.models.baselines import (
     MeanForecaster,
     NaiveForecaster,
     SeasonalNaiveForecaster,
-    VARForecaster,
 )
 from src.models.chronos_wrapper import ChronosFinancialForecaster
 from src.preprocessing.tokenizer import AdvancedTokenizer, FinancialDataTokenizer
@@ -57,9 +55,9 @@ class TestDataPipeline:
     def test_data_cleaner(self, sample_data):
         """Test data cleaning."""
         cleaner = DataCleaner()
-        cleaned = cleaner.clean(sample_data.copy())
+        cleaned = cleaner.clean_market_data(sample_data.copy())
         assert cleaned.shape[0] > 0
-        assert not cleaned.isna().any().any()
+        assert not cleaned.isna().sum().sum() > 0
 
     def test_feature_creation(self, sample_data):
         """Test feature creation."""
@@ -82,9 +80,7 @@ class TestTokenization:
     def sample_series(self):
         """Create sample time series."""
         return pd.DataFrame(
-            {
-                "Close": np.sin(np.linspace(0, 4 * np.pi, 200)) + np.random.normal(0, 0.1, 200)
-            }
+            {"Close": np.sin(np.linspace(0, 4 * np.pi, 200)) + np.random.normal(0, 0.1, 200)}
         )
 
     def test_financial_tokenizer_uniform(self, sample_series):
@@ -131,8 +127,7 @@ class TestBaselineModels:
         dates = pd.date_range(start="2023-01-01", periods=200, freq="D")
         data = pd.DataFrame(
             {
-                "Close": np.sin(np.linspace(0, 4 * np.pi, 200))
-                + np.random.normal(0, 0.1, 200),
+                "Close": np.sin(np.linspace(0, 4 * np.pi, 200)) + np.random.normal(0, 0.1, 200),
             },
             index=dates,
         )
@@ -221,8 +216,7 @@ class TestChronosModel:
         dates = pd.date_range(start="2023-01-01", periods=100, freq="D")
         data = pd.DataFrame(
             {
-                "Close": np.sin(np.linspace(0, 4 * np.pi, 100))
-                + np.random.normal(0, 0.1, 100),
+                "Close": np.sin(np.linspace(0, 4 * np.pi, 100)) + np.random.normal(0, 0.1, 100),
             },
             index=dates,
         )
@@ -230,9 +224,7 @@ class TestChronosModel:
 
     def test_chronos_initialization(self):
         """Test Chronos model initialization."""
-        model = ChronosFinancialForecaster(
-            prediction_length=20, device="cpu"
-        )
+        model = ChronosFinancialForecaster(prediction_length=20, device="cpu")
         assert model.prediction_length == 20
         assert model.device == "cpu"
 
@@ -244,9 +236,7 @@ class TestChronosModel:
 
     def test_chronos_forecast(self, sample_data):
         """Test Chronos zero-shot forecast."""
-        model = ChronosFinancialForecaster(
-            prediction_length=20, device="cpu"
-        )
+        model = ChronosFinancialForecaster(prediction_length=20, device="cpu")
         model.fit(sample_data, "Close")
         forecasts = model.forecast_zero_shot(sample_data, "Close", num_samples=10)
         assert "median" in forecasts
@@ -346,12 +336,11 @@ class TestAttributionAnalysis:
     def test_attribution_analyzer(self, setup_attribution):
         """Test attribution analyzer."""
         X, y, predict_fn = setup_attribution
-        X_df = pd.DataFrame(X, columns=[f"Feature_{i}" for i in range(5)])
+        X_df = pd.DataFrame(X)
+        X_df.columns = [f"Feature_{i}" for i in range(5)]
 
         analyzer = AttributionAnalyzer()
-        results = analyzer.analyze(
-            X_df, y, predict_fn, methods=["ablation"]
-        )
+        results = analyzer.analyze(X_df, y, predict_fn, methods=["ablation"])
         assert "ablation" in results
 
 
@@ -379,7 +368,7 @@ class TestEndToEndPipeline:
         """Test full pipeline with naive forecaster."""
         # Clean data
         cleaner = DataCleaner()
-        data = cleaner.clean(full_pipeline_data.copy())
+        data = cleaner.clean_market_data(full_pipeline_data.copy())
 
         # Create features
         data = create_features(data)
@@ -406,7 +395,7 @@ class TestEndToEndPipeline:
         """Test full pipeline with Chronos."""
         # Clean data
         cleaner = DataCleaner()
-        data = cleaner.clean(full_pipeline_data.copy())
+        data = cleaner.clean_market_data(full_pipeline_data.copy())
 
         # Split
         split_idx = int(len(data) * 0.8)
@@ -414,9 +403,7 @@ class TestEndToEndPipeline:
         test = data.iloc[split_idx:]
 
         # Train and forecast
-        model = ChronosFinancialForecaster(
-            prediction_length=20, device="cpu"
-        )
+        model = ChronosFinancialForecaster(prediction_length=20, device="cpu")
         model.fit(train, "Close")
         forecasts = model.forecast_zero_shot(test, "Close", num_samples=10)
 
@@ -433,9 +420,7 @@ class TestEndToEndPipeline:
         test = full_pipeline_data.iloc[split_idx:]
 
         # Tokenize
-        tokenizer = FinancialDataTokenizer(
-            method="quantile", num_bins=100
-        )
+        tokenizer = FinancialDataTokenizer(method="quantile", num_bins=100)
         tokenizer.fit(train[["Close"]])
         tokens = tokenizer.transform(test[["Close"]])
 

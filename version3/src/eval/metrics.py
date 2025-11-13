@@ -1,7 +1,5 @@
 """Evaluation metrics for forecasting models."""
 
-from typing import Optional
-
 import numpy as np
 import pandas as pd
 
@@ -16,7 +14,7 @@ def mae(actual: np.ndarray, predicted: np.ndarray) -> float:
     Returns:
         MAE value
     """
-    return np.mean(np.abs(actual - predicted))
+    return float(np.mean(np.abs(actual - predicted)))
 
 
 def rmse(actual: np.ndarray, predicted: np.ndarray) -> float:
@@ -29,7 +27,7 @@ def rmse(actual: np.ndarray, predicted: np.ndarray) -> float:
     Returns:
         RMSE value
     """
-    return np.sqrt(np.mean((actual - predicted) ** 2))
+    return float(np.sqrt(np.mean((actual - predicted) ** 2)))
 
 
 def mase(
@@ -49,17 +47,15 @@ def mase(
     """
     # Compute naive forecast error
     if len(actual) < seasonal_period + 1:
-        return np.mean(np.abs(actual - predicted))
+        return float(np.mean(np.abs(actual - predicted)))
 
-    naive_errors = np.abs(
-        actual[seasonal_period:] - actual[:-seasonal_period]
-    )
+    naive_errors = np.abs(actual[seasonal_period:] - actual[:-seasonal_period])
     naive_mean_error = np.mean(naive_errors)
 
     if naive_mean_error == 0:
-        return np.mean(np.abs(actual - predicted))
+        return float(np.mean(np.abs(actual - predicted)))
 
-    return np.mean(np.abs(actual - predicted)) / naive_mean_error
+    return float(np.mean(np.abs(actual - predicted)) / naive_mean_error)
 
 
 def smape(actual: np.ndarray, predicted: np.ndarray) -> float:
@@ -75,7 +71,7 @@ def smape(actual: np.ndarray, predicted: np.ndarray) -> float:
     denominator = (np.abs(actual) + np.abs(predicted)) / 2.0
     diff = np.abs(actual - predicted) / denominator
     diff[denominator == 0] = 0
-    return np.mean(diff)
+    return float(np.mean(diff))
 
 
 def mape(actual: np.ndarray, predicted: np.ndarray) -> float:
@@ -91,14 +87,12 @@ def mape(actual: np.ndarray, predicted: np.ndarray) -> float:
     # Avoid division by zero
     mask = actual != 0
     if not np.any(mask):
-        return np.mean(np.abs(actual - predicted))
+        return float(np.mean(np.abs(actual - predicted)))
 
-    return np.mean(np.abs((actual[mask] - predicted[mask]) / actual[mask]))
+    return float(np.mean(np.abs((actual[mask] - predicted[mask]) / actual[mask])))
 
 
-def directional_accuracy(
-    actual: np.ndarray, predicted: np.ndarray
-) -> float:
+def directional_accuracy(actual: np.ndarray, predicted: np.ndarray) -> float:
     """Directional accuracy (percentage of correct direction changes).
 
     Args:
@@ -167,7 +161,7 @@ def quantile_loss(
         Quantile loss
     """
     residual = actual - predicted
-    return np.mean(np.where(residual >= 0, q * residual, (q - 1) * residual))
+    return float(np.mean(np.where(residual >= 0, q * residual, (q - 1) * residual)))
 
 
 def interval_coverage(
@@ -186,12 +180,10 @@ def interval_coverage(
         Coverage probability (0-1)
     """
     covered = (actual >= lower_bound) & (actual <= upper_bound)
-    return np.mean(covered)
+    return float(np.mean(covered))
 
 
-def interval_width(
-    lower_bound: np.ndarray, upper_bound: np.ndarray
-) -> float:
+def interval_width(lower_bound: np.ndarray, upper_bound: np.ndarray) -> float:
     """Average width of prediction intervals.
 
     Args:
@@ -201,7 +193,7 @@ def interval_width(
     Returns:
         Average interval width
     """
-    return np.mean(upper_bound - lower_bound)
+    return float(np.mean(upper_bound - lower_bound))
 
 
 def calibration_error(
@@ -221,12 +213,14 @@ def calibration_error(
 
     for q, forecast in quantile_forecasts.items():
         # Empirical coverage
-        coverage = np.mean(actual <= forecast)
+        coverage = float(np.mean(actual <= forecast))
         # Target coverage
         error = np.abs(coverage - q)
         errors.append(error)
 
-    return np.mean(errors) if errors else 0.0
+    if not errors:
+        return 0.0
+    return float(np.mean(errors))
 
 
 def pinball_loss(
@@ -245,9 +239,7 @@ def pinball_loss(
         Pinball loss
     """
     residual = actual - predicted
-    return np.mean(
-        np.where(residual >= 0, q * residual, (q - 1) * residual)
-    )
+    return float(np.mean(np.where(residual >= 0, q * residual, (q - 1) * residual)))
 
 
 class ForecastEvaluator:
@@ -266,8 +258,8 @@ class ForecastEvaluator:
         self,
         actual: np.ndarray,
         predicted: np.ndarray,
-        quantile_forecasts: Optional[dict[float, np.ndarray]] = None,
-        metrics: Optional[list[str]] = None,
+        quantile_forecasts: dict[float, np.ndarray] | None = None,
+        metrics: list[str] | None = None,
     ) -> dict:
         """Evaluate forecasts with multiple metrics.
 
@@ -293,6 +285,22 @@ class ForecastEvaluator:
 
         results = {}
 
+        # Compute point forecast metrics
+        results.update(self._compute_point_metrics(actual, predicted, metrics))
+
+        # Compute probabilistic metrics
+        if quantile_forecasts is not None:
+            results.update(self._compute_probabilistic_metrics(quantile_forecasts, actual, metrics))
+
+        self.results = results
+        return results
+
+    def _compute_point_metrics(
+        self, actual: np.ndarray, predicted: np.ndarray, metrics: list[str]
+    ) -> dict:
+        """Compute point forecast metrics."""
+        results = {}
+
         # Point forecast metrics
         if "mae" in metrics:
             results["mae"] = float(mae(actual, predicted))
@@ -301,9 +309,7 @@ class ForecastEvaluator:
             results["rmse"] = float(rmse(actual, predicted))
 
         if "mase" in metrics:
-            results["mase"] = float(
-                mase(actual, predicted, self.seasonal_period)
-            )
+            results["mase"] = float(mase(actual, predicted, self.seasonal_period))
 
         if "mape" in metrics:
             results["mape"] = float(mape(actual, predicted))
@@ -312,35 +318,38 @@ class ForecastEvaluator:
             results["smape"] = float(smape(actual, predicted))
 
         if "directional_accuracy" in metrics:
-            results["directional_accuracy"] = float(
-                directional_accuracy(actual, predicted)
+            results["directional_accuracy"] = float(directional_accuracy(actual, predicted))
+
+        return results
+
+    def _compute_probabilistic_metrics(
+        self, quantile_forecasts: dict[float, np.ndarray], actual: np.ndarray, metrics: list[str]
+    ) -> dict:
+        """Compute probabilistic metrics."""
+        results = {}
+
+        if "calibration_error" in metrics:
+            results["calibration_error"] = float(calibration_error(actual, quantile_forecasts))
+
+        if "interval_coverage_90" in metrics and (
+            0.05 in quantile_forecasts and 0.95 in quantile_forecasts
+        ):
+            coverage = interval_coverage(
+                actual,
+                quantile_forecasts[0.05],
+                quantile_forecasts[0.95],
             )
+            results["interval_coverage_90"] = float(coverage)
 
-        # Probabilistic metrics
-        if quantile_forecasts is not None:
-            if "calibration_error" in metrics:
-                results["calibration_error"] = float(
-                    calibration_error(actual, quantile_forecasts)
-                )
+        if "interval_width_90" in metrics and (
+            0.05 in quantile_forecasts and 0.95 in quantile_forecasts
+        ):
+            width = interval_width(
+                quantile_forecasts[0.05],
+                quantile_forecasts[0.95],
+            )
+            results["interval_width_90"] = float(width)
 
-            if "interval_coverage_90" in metrics and (0.05 in quantile_forecasts
-                    and 0.95 in quantile_forecasts):
-                coverage = interval_coverage(
-                    actual,
-                    quantile_forecasts[0.05],
-                    quantile_forecasts[0.95],
-                )
-                results["interval_coverage_90"] = float(coverage)
-
-            if "interval_width_90" in metrics and (0.05 in quantile_forecasts
-                    and 0.95 in quantile_forecasts):
-                width = interval_width(
-                    quantile_forecasts[0.05],
-                    quantile_forecasts[0.95],
-                )
-                results["interval_width_90"] = float(width)
-
-        self.results = results
         return results
 
     def summary(self) -> pd.DataFrame:
@@ -355,7 +364,7 @@ class ForecastEvaluator:
         self,
         models_predictions: dict[str, np.ndarray],
         actual: np.ndarray,
-        metrics: Optional[list[str]] = None,
+        metrics: list[str] | None = None,
     ) -> pd.DataFrame:
         """Compare multiple model predictions.
 
@@ -370,9 +379,7 @@ class ForecastEvaluator:
         comparisons = {}
 
         for model_name, predicted in models_predictions.items():
-            comparisons[model_name] = self.evaluate(
-                actual, predicted, metrics=metrics
-            )
+            comparisons[model_name] = self.evaluate(actual, predicted, metrics=metrics)
 
         return pd.DataFrame(comparisons).T
 
@@ -401,29 +408,23 @@ class ForecastEvaluator:
 
         if np.sum(upward_actual) > 0:
             upward_acc = np.mean(
-                predicted_direction[upward_actual]
-                == actual_direction[upward_actual]
+                predicted_direction[upward_actual] == actual_direction[upward_actual]
             )
             results["upward_accuracy"] = float(upward_acc)
 
         if np.sum(downward_actual) > 0:
             downward_acc = np.mean(
-                predicted_direction[downward_actual]
-                == actual_direction[downward_actual]
+                predicted_direction[downward_actual] == actual_direction[downward_actual]
             )
             results["downward_accuracy"] = float(downward_acc)
 
         if np.sum(flat_actual) > 0:
-            flat_acc = np.mean(
-                predicted_direction[flat_actual] == actual_direction[flat_actual]
-            )
+            flat_acc = np.mean(predicted_direction[flat_actual] == actual_direction[flat_actual])
             results["flat_accuracy"] = float(flat_acc)
 
         return results
 
-    def error_statistics(
-        self, actual: np.ndarray, predicted: np.ndarray
-    ) -> dict:
+    def error_statistics(self, actual: np.ndarray, predicted: np.ndarray) -> dict:
         """Compute error statistics.
 
         Args:
@@ -447,8 +448,8 @@ class ForecastEvaluator:
 def calculate_all_metrics(
     actual: np.ndarray,
     predicted: np.ndarray,
-    metrics: Optional[list[str]] = None,
-    quantile_forecasts: Optional[dict[float, np.ndarray]] = None,
+    metrics: list[str] | None = None,
+    quantile_forecasts: dict[float, np.ndarray] | None = None,
 ) -> dict:
     """Calculate all requested metrics.
 
@@ -462,6 +463,4 @@ def calculate_all_metrics(
         Dictionary of metric results
     """
     evaluator = ForecastEvaluator()
-    return evaluator.evaluate(
-        actual, predicted, quantile_forecasts, metrics
-    )
+    return evaluator.evaluate(actual, predicted, quantile_forecasts, metrics)
